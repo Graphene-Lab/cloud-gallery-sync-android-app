@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ProfileScreen(
     onLogout: () -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToSubscription: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,6 +62,11 @@ fun ProfileScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Logout")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick =  onNavigateToSubscription) {
+                    Text("Manage Subscription")
                 }
             }
         }

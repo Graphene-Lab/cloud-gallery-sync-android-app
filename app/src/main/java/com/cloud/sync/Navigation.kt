@@ -9,6 +9,7 @@ import com.cloud.sync.ui.auth.AuthScreen
 import com.cloud.sync.ui.login.LoginScreen
 import com.cloud.sync.ui.profile.ProfileScreen
 import com.cloud.sync.ui.scan.ScanScreen
+import com.cloud.sync.ui.subscription.SubscriptionScreen
 import com.cloud.sync.ui.sync.SyncScreen
 
 
@@ -78,8 +79,15 @@ fun AppNavigation() {
                 },
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToSubscription = {
+                    navController.navigate("subscription")
                 }
             )
+        }
+
+        composable("subscription") {
+            SubscriptionScreen()
         }
     }
 }

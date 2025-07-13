@@ -1,4 +1,6 @@
 import com.android.build.api.dsl.Packaging
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,6 +9,12 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+val appPropsFile = rootProject.file("application.properties")
+val appProps = Properties()
+if (appPropsFile.exists()) {
+    appProps.load(FileInputStream(appPropsFile))
 }
 
 android {
@@ -29,7 +37,10 @@ android {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
+
             buildConfigField("boolean", "IS_DEBUG", "true")
+            buildConfigField("String", "STRIPE_PUBLIC_KEY", "\"${appProps.getProperty("STRIPE_PUBLIC_KEY_DEBUG")}\"")
+            buildConfigField("String", "BASE_URL", "\"${appProps.getProperty("BASE_URL_DEBUG")}\"")
         }
         release {
             isMinifyEnabled = false
@@ -37,6 +48,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            buildConfigField("String", "STRIPE_PUBLIC_KEY", "\"${appProps.getProperty("STRIPE_PUBLIC_KEY_RELEASE")}\"")
+            buildConfigField("String", "BASE_URL", "\"${appProps.getProperty("BASE_URL_RELEASE")}\"")
+
         }
     }
     compileOptions {
@@ -119,4 +134,13 @@ dependencies {
 
     // Secure Storage
     implementation(libs.androidx.security.crypto)
+
+    // Stripe for Android
+    implementation(libs.stripe.android)
+
+    // Retrofit for networking
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.okhttp.core)
+    implementation(libs.logging.interceptor)
 }
