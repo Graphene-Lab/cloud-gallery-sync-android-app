@@ -3,7 +3,7 @@ package com.cloud.sync.ui.subscription
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.data.network.payment.SubscriptionPlan
-import com.cloud.sync.data.repository.PaymentRepository
+import com.cloud.sync.domain.repositroy.IPaymentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SubscriptionViewModel @Inject constructor(
-    private val paymentRepository: PaymentRepository
+    private val paymentRepository: IPaymentRepository
 ) : ViewModel() {
 
     private val _plans = MutableStateFlow<List<SubscriptionPlan>>(emptyList())

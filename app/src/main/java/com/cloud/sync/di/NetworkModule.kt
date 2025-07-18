@@ -3,6 +3,7 @@ package com.cloud.sync.di
 import com.cloud.sync.BuildConfig
 import com.cloud.sync.data.network.common.AuthInterceptor
 import com.cloud.sync.data.network.payment.PaymentService
+import com.cloud.sync.data.network.user.CloudSpaceService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,9 +22,7 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-            // Add the AuthInterceptor to intercept and add the token
             .addInterceptor(authInterceptor)
-            // The logging interceptor should come after the auth one to see the added header
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
@@ -44,5 +43,11 @@ object NetworkModule {
     @Singleton
     fun providePaymentService(retrofit: Retrofit): PaymentService {
         return retrofit.create(PaymentService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCloudSpaceService(retrofit: Retrofit): CloudSpaceService {
+        return retrofit.create(CloudSpaceService::class.java)
     }
 }
