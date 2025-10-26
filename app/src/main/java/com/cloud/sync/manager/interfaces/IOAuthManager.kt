@@ -2,7 +2,7 @@ package com.cloud.sync.manager.interfaces
 
 import android.content.Intent
 
-interface IAuthManager {
+interface IOAuthManager {
     fun getAuthIntent(): Intent
     suspend fun exchangeCodeForToken(intent: Intent)
 }

@@ -1,5 +1,6 @@
 package com.cloud.sync.data.repository
 
+import com.cloud.sync.data.network.payment.SubscriptionPlan
 import com.cloud.sync.data.network.user.CloudSpaceService
 import com.cloud.sync.domain.model.CloudSpaceCredentials
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
@@ -15,7 +16,11 @@ class CloudSpaceRepository @Inject constructor(
         val response = cloudSpaceService.getCloudSpaceCredentials()
         return CloudSpaceCredentials(
             qrEncrypted = response.qrEncrypted,
-            pin = 1234 // TODO: Default pin for now, need to replace when getting from backend
+            pin = response.pin
         )
+    }
+
+    override suspend fun getCurrentSubscriptionPlan(): SubscriptionPlan {
+        return cloudSpaceService.getCurrentSubscriptionPlan()
     }
 }

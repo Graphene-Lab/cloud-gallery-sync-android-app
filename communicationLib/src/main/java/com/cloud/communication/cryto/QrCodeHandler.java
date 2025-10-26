@@ -3,6 +3,7 @@ package com.cloud.communication.cryto;
 
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
 import static com.cloud.communication.cryto.ConversionUtils.base64ToBuffer;
 import static com.cloud.communication.cryto.ConversionUtils.bufferToString;
@@ -15,8 +16,8 @@ import static com.cloud.communication.cryto.encryption.RsaEncryption.encryptData
 
 
 public class QrCodeHandler {
-    public static void onQrCodeAcquires(String qrCode) {
-        SessionManager.resetSession()
+    public static CompletableFuture<Void> onQrCodeAcquired(String qrCode, int pin) {
+        return SessionManager.resetSession()
                 .thenRun(() -> {
                     byte[] qr;
                     try {
@@ -28,11 +29,12 @@ public class QrCodeHandler {
 
                     int offset = 0;
                     int type = qr[offset] & 0xFF;
-                    if(type != 2){
+                    if (type != 2) {
                         alertBox("QR code format not supported!");
                         return;
                     }
                     offset++;
+                    SessionManager.getCurrentSession().setPin(pin);
                     handleQrCode(qr, offset);
                 });
     }
@@ -53,7 +55,6 @@ public class QrCodeHandler {
 
         RequestManager.executeRequest(Command.GetEncryptedQR.getId(), null);
     }
-
 
 
     static int chunkSize = 1024 * 256;

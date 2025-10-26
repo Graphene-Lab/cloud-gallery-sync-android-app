@@ -36,7 +36,8 @@ fun LoginScreen(
             result.data?.let {
                 coroutineScope.launch {
                     try {
-                        viewModel.handleAuthResult(it)
+                        viewModel.exchangeCodeForToken(it)
+                        viewModel.connectToCloud()
                         onLoginSuccess()
                     } catch (e: AuthorizationException) {
                         Log.w("LoginScreen", "Authorization failed or was cancelled", e)

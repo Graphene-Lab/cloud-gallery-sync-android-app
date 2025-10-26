@@ -1,8 +1,8 @@
 package com.cloud.sync.ui.profile
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val oauthTokenRepository: IOauthTokenRepository
+    private val oauthTokenRepository: IOauthTokenRepository,
+    private val cloudSpaceRepository: ICloudSpaceRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -22,6 +23,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadUserProfile()
+        loadCurrentSubscriptionPlan()
     }
 
     private fun loadUserProfile() {
@@ -29,6 +31,33 @@ class ProfileViewModel @Inject constructor(
             val userEmail = oauthTokenRepository.getEmail()
             _uiState.update { it.copy(email = userEmail) }
         }
+    }
+
+    private fun loadCurrentSubscriptionPlan() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingPlan = true, planError = null) }
+            
+            try {
+                val currentPlan = cloudSpaceRepository.getCurrentSubscriptionPlan()
+                _uiState.update { 
+                    it.copy(
+                        currentPlan = currentPlan,
+                        isLoadingPlan = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(
+                        isLoadingPlan = false,
+                        planError = e.message ?: "Failed to load subscription plan"
+                    )
+                }
+            }
+        }
+    }
+
+    fun refreshSubscriptionPlan() {
+        loadCurrentSubscriptionPlan()
     }
 
     fun logout() {

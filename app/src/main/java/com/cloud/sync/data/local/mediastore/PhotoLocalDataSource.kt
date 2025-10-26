@@ -1,6 +1,8 @@
 package com.cloud.sync.data.local.mediastore
 
+import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import com.cloud.sync.domain.model.GalleryPhoto
@@ -8,7 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class PhotoLocalDataSource @Inject constructor(
-    @ApplicationContext  private val context: Context
+    @ApplicationContext private val context: Context
 ) {
 
     fun getPhotos(startTimeSeconds: Long): List<GalleryPhoto> {
@@ -46,15 +48,16 @@ class PhotoLocalDataSource @Inject constructor(
         }
 
         selectionParts.add("${MediaStore.Images.Media.DATA} LIKE ?")
+        //TODO: put TestCamera for debug mode BuildConfig
         val dcimCameraPath =
-            "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath}/Camera"
+            "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath}/TestCamera"
         selectionArgsList.add("$dcimCameraPath%")
 
         val selection = selectionParts.joinToString(" AND ")
         val selectionArgs = selectionArgsList.toTypedArray()
 
         val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} ASC"
-
+        //note: if no photos found check if permission granted.
         context.contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             projection,
@@ -63,11 +66,20 @@ class PhotoLocalDataSource @Inject constructor(
             sortOrder
         )?.use { cursor ->
             while (cursor.moveToNext()) {
+                val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+                val dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED))
+                val displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
+                val contentUri: Uri = ContentUris.withAppendedId(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+
                 photos.add(
                     GalleryPhoto(
-                        id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)),
-                        dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)),
-                        displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
+                        id = id,
+                        dateAdded = dateAdded,
+                        displayName = displayName,
+                        path = contentUri
                     )
                 )
             }

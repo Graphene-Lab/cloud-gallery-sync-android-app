@@ -7,16 +7,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 
+import java.util.function.BiConsumer;
 
 public class FileUploader {
 
@@ -28,8 +31,13 @@ public class FileUploader {
     private static final Map<String, Integer> chunkLength = new ConcurrentHashMap<>();
     private static final Map<String, BiConsumer<String, Integer>> chunkRequest = new ConcurrentHashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
     public static void startSendFileAsync(File file) {
         new Thread(() -> startSendFile(file)).start();
+    }
+
+    public static void startSendFileAsync(InputStream inputStream, String filename) {
+        new Thread(() -> startSendFile(inputStream, filename)).start();
     }
 
     public static void startSendFile(File file) {
@@ -46,6 +54,35 @@ public class FileUploader {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void startSendFile(InputStream inputStream, String filename) {
+        try (inputStream) {
+            try {
+                byte[] fileData = readAllBytesCompat(inputStream);
+
+                upload.put(filename, fileData);
+
+                chunkRequestCallback(filename, 1);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static byte[] readAllBytesCompat(InputStream inputStream) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
+        }
+
+        return outputStream.toByteArray();
     }
 
     private static void chunkRequestCallback(String fullFileName, int chunkNumber) {
@@ -104,7 +141,8 @@ public class FileUploader {
             byte[] payload = jsonString.getBytes(StandardCharsets.UTF_8);
 
             // Now, send the final byte array payload
-            RequestManager.executeRequest(Command.SetFile.getId(), payload);
+            RequestManager.enqueueRequest(Command.SetFile.getId(), payload);
+//            RequestManager.executeRequest(Command.SetFile.getId(), payload);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -155,7 +193,6 @@ public class FileUploader {
     }
 
 
-
     static class FileChunk {
         // Fields are not public
         private final String fullName;
@@ -176,14 +213,17 @@ public class FileUploader {
         public String getFullName() {
             return fullName;
         }
+
         @JsonProperty("Data")
         public String getData() {
             return data;
         }
+
         @JsonProperty("ChunkPart")
         public int getChunkPart() {
             return chunkPart;
         }
+
         @JsonProperty("TotalChunk")
         public int getTotalChunk() {
             return totalChunk;
@@ -192,20 +232,50 @@ public class FileUploader {
 
     public static void main(String[] args) {
         initMockSession();
+
+        // Initialize session persistence for testing
+//        RequestManager.setSessionPersistenceCallback(new SessionPersistenceCallback() {
+//            @Override
+//            public void saveSession(Session session) {
+//                SessionStorage.saveSession(session);
+//            }
+//
+//            @Override
+//            public void onSaveError(String error) {
+//                System.err.println("Session save error: " + error);
+//            }
+//
+//            @Override
+//            public CompletableFuture<Session> loadSession() {
+//                return SessionStorage.loadSession();
+//            }
+//        });
         File file = new File("C:/Users/Ramazan/Downloads/the_cloud_ppt.pdf");
-//        var file2 = new File("C:\\Users\\Ramazan\\Downloads\\encrypted messenger.pdf");
-        startSendFileAsync(file);
-//        startSendFileAsync(file2); // true for async
+        File file2 = new File("C:/Users/Ramazan/Downloads/the_cloud_ppt (1).pdf");
+//        startSendFileAsync(file);
+        startSendFile(file);
+        startSendFile(file2);
+//        var qrCode = "Avxfz60f3Hk4cyCIOCzrRWTynhulljCgQSoRCMNmiLwNMTk1LjIwLjIzNS41";
+//        var pin = 428717;
+//        QrCodeHandler.onQrCodeAcquired(qrCode, pin).thenRun(() -> {
+//                    CompletableFuture.delayedExecutor(40, TimeUnit.SECONDS).execute(() -> {
+//                        System.out.println("Timer expired, starting file upload...");
+//                        File file = new File("C:/Users/Ramazan/Downloads/the_cloud_ppt.pdf");
+//                        startSendFileAsync(file);
+//                    });
+//                }
+//        );
     }
 
-    private static void initMockSession(){
+
+    private static void initMockSession() {
         String entryPoint = "proxy";
-        String clientId = "4bce54deed8b42e7";
-        String publicKeyB64 = "rZ5VkVW9Z4RasdTF0T1aaTAFBA+LBloX2jBdjLob8KQB4LJao77ClKwL0VQy22vrtqGjET1cyLxUr1978u6PzcfvECbbnT9zRa52yd4ajAN3yvgDa8TIs6R/e6WEVzP07wj5lKPVjfqLRNurC5SFD3R7GV3HcKlCCzejV5Q8JJQBlgtG7NnzLUIPVYNww8ChU0CR0YMb5gyxMsjg4sRUYVH54m20UPuEaJPfTMkJZykZepy61HoDnk4PQguiQ62yTMyhOFFZx1llAtE2/ozlXKSbidoaW7eOsHmah7PMbQWtuGIzEHM2Vwdy1yrcNz++eunhBQUJpaNXSIi+X9TKpw==";
+        String clientId = "445f4a39f4a46932";
+        String publicKeyB64 = "sENlSQVGEwCJdzJd4h9R7EfhpVc9VJUSwPLp2vimrA0qMkeMz68qQ94JL/IUYajsgEJiqnyK0H35a0CR7LVL+Pn9SzK8YYgFi/txEG9gLXYFpsCyyYDBsYqlztqgqpSuWKD8hXosDuWk0oLc2oLfFOFAqC48xR8ZvYdZwaHiOLW3NbGtgHAMm6vqcjhdKEbfrsgEq++eFSiA/KbBAAKuhzrWDWipydHAXqsE/68v6p61Txq0IFrsXV99eciUh/T1KzDPQSjgeMGOt9FKHF7RKNmCFtwqRoK9kvj73FNVVti/P15dJEa/IWBFdmzoUziHKhCHnBter4l2xzAAYfGrww==";
         String encryptionType = "aes";
-        byte[] deviceKey = {-7, 21, -82, 117, -61, -111, 103, -100, 43, -108, 118, -16, 61, -57, -52, -56, -28, -30, -101, 9, -58, 120, 16, 43, 43, 46, -1, 87, 7, 21, 107, 31};
-        byte[] IV = {-61, 62, -95, 43, 56, -68, -116, -48, -37, 24, -119, 67, 28, 84, 18, 58};
-        String serverId = "db7d461d0fcae35f";
+        byte[] deviceKey = {-83, 112, -48, 43, 29, -33, 84, 127, -50, 125, -52, -86, 52, -4, -81, 61, 97, 15, -63, -20, 107, 121, 112, 35, 46, 54, -3, -80, -72, -71, -23, 36};
+        byte[] IV = {-8, 92, 2, 103, 68, -48, 21, -12, -52, -32, -60, -24, -63, 33, 94, 54};
+        String serverId = "c45f68a68eeb15a9";
 
 //        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyB64);
 //        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
@@ -218,12 +288,31 @@ public class FileUploader {
         var session = SessionManager.getCurrentSession();
         session.setEntryPoint(entryPoint);
         session.setClientId(clientId);
-        session.setPublicKeyB64(publicKeyB64);
-        session.setEncryptionType(encryptionType);
-        session.setDeviceKey(deviceKey);
+//        session.setPublicKeyB64(publicKeyB64);
+//        session.setEncryptionType(encryptionType);
+//        session.setDeviceKey(deviceKey);
         session.setIV(IV);
         session.setServerId(serverId);
+        session.setPin(617075);
 //        session.setPublicKey(publicKey);
         session.setSymmetricKey(symmetricKey);
     }
 }
+
+class SessionStorage {
+    private static Session storedSession = null;
+
+    public static void saveSession(Session session) {
+        storedSession = session;
+        System.out.println("Session saved in memory for testing");
+    }
+
+    public static CompletableFuture<Session> loadSession() {
+        return CompletableFuture.completedFuture(storedSession);
+    }
+
+    public static void clearSession() {
+        storedSession = null;
+    }
+}
+

@@ -40,14 +40,13 @@ public class Pairing {
             }
         }
         // Authentication
+        alertBox("Pairing complete. Authenticating with PIN: " + session.getPin() + " ...");
         authenticate(auth);
     }
 
 
     public static void authenticate(byte[] auth) {
-        //TODO: take pin from the user
-        int pin = 762836;
-
+        var pin = SessionManager.getCurrentSession().getPin();
         byte[] pin4 = int32ToBuffer(pin);
         byte[] authentication = joinBuffers(auth, pin4);
 

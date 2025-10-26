@@ -1,6 +1,5 @@
 package com.cloud.communication.cryto;
 
-
 import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -18,6 +17,8 @@ public class Session {
     private PublicKey publicKey;
     private PrivateKey privateKey;
     private SecretKey symmetricKey;
+
+    private int pin;
 
     public Session() {
         this(null);
@@ -123,5 +124,12 @@ public class Session {
 
     public void setSymmetricKey(SecretKey symmetricKey) {
         this.symmetricKey = symmetricKey;
+    }
+
+    public int getPin() {
+        return pin;
+    }
+    public void setPin(int pin) {
+        this.pin = pin;
     }
 }

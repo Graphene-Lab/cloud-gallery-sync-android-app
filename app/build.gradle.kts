@@ -48,10 +48,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
+            buildConfigField("boolean", "IS_DEBUG", "false")
             buildConfigField("String", "STRIPE_PUBLIC_KEY", "\"${appProps.getProperty("STRIPE_PUBLIC_KEY_RELEASE")}\"")
             buildConfigField("String", "BASE_URL", "\"${appProps.getProperty("BASE_URL_RELEASE")}\"")
-
         }
     }
     compileOptions {
@@ -143,4 +142,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.okhttp.core)
     implementation(libs.logging.interceptor)
+
+    // communicationLib
+    implementation(project(":communicationLib"))
 }

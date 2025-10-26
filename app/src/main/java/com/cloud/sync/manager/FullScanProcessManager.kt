@@ -1,5 +1,7 @@
 package com.cloud.sync.manager
 
+import android.content.ContentResolver
+import com.cloud.communication.cryto.FileUploader
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
@@ -12,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
@@ -24,6 +27,9 @@ class FullScanProcessManager @Inject constructor(
     private val syncIntervalRepository: ISyncRepository,
     private val galleryRepository: IGalleryRepository,
     private val syncConfig: SyncConfig,
+    private val contentResolver: ContentResolver
+
+
 ) : IFullScanProcessManager {
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
@@ -114,7 +120,7 @@ class FullScanProcessManager @Inject constructor(
         photos: List<GalleryPhoto>,
         statusPrefix: String,
         onBatchSave: suspend (Long) -> Unit
-    ) {
+    ) = withContext(Dispatchers.IO) { // Move the entire function to IO dispatcher
         val batchSize = syncConfig.batchSize
         var photosInBatch = 0
         var lastSyncedTimestamp = 0L
@@ -122,25 +128,42 @@ class FullScanProcessManager @Inject constructor(
         photos.forEachIndexed { index, photo ->
             context.ensureActive() // Check for parent coroutine cancellation.
 
-            // TODO: Integrate actual file upload mechanism here.
-            //  FileUploader.startSendFileAsync(File(photo.path))
-            withContext(Dispatchers.IO) { // Ensure simulated network operation runs on IO dispatcher.
-                delay(100) // Simulate upload time.
-                println("Uploaded ${photo.displayName}") // Log for development/debugging.
+            try {
+                contentResolver.openInputStream(photo.path)?.use { inputStream ->
+                    // Read all bytes immediately to avoid stream closing issues
+                    val bytes = inputStream.readBytes()
+                    // Create a new ByteArrayInputStream for the FileUploader
+                    java.io.ByteArrayInputStream(bytes).use { byteStream ->
+                        FileUploader.startSendFile(
+                            byteStream,
+                            photo.displayName
+                        ) // Use sync version
+                    }
+                }
+            } catch (e: Exception) {
+                println("Failed to upload ${photo.displayName}: ${e.message}")
             }
 
             lastSyncedTimestamp = photo.dateAdded
 
-            SyncStatusManager.update(true, "$statusPrefix (${index + 1}/${photos.size})")
+            // Update status on main thread
+            withContext(Dispatchers.Main) {
+                SyncStatusManager.update(true, "$statusPrefix (${index + 1}/${photos.size})")
+            }
 
             if (++photosInBatch >= batchSize) {
-                onBatchSave(lastSyncedTimestamp)
+                // Switch to main context for saving intervals
+                withContext(Dispatchers.Main) {
+                    onBatchSave(lastSyncedTimestamp)
+                }
                 photosInBatch = 0
             }
         }
-        // Save any remaining photos that didn't form a full batch.
+
         if (photosInBatch > 0) {
-            onBatchSave(lastSyncedTimestamp)
+            withContext(Dispatchers.Main) {
+                onBatchSave(lastSyncedTimestamp)
+            }
         }
     }
 }
