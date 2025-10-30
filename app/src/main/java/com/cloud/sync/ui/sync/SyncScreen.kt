@@ -53,6 +53,43 @@ fun SyncScreen(
                             modifier = Modifier.padding(top = 8.dp),
                             minLines = 2
                         )
+                        Row {
+                            Text(
+                                text = "Uploaded Photos:",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = uiState.completedPhotos.toString(),
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        Row {
+                            Text(
+                                text = "Failed Photos:",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = uiState.failedPhotos.toString(),
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        Row {
+                            Text(
+                                text = "Discovered Photos:",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = uiState.totalPhotosToBeUploaded.toString(),
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+
+                        Column {
+                            Text(text = "Progress Info:")
+                            Text(text = uiState.progress?.let { progress ->
+                                "${progress.filename} ${progress.currentChunk}/${progress.totalChunks}"
+                            } ?: "waiting...")
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))

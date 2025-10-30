@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class FileUploader {
 
@@ -31,6 +32,39 @@ public class FileUploader {
     private static final Map<String, Integer> chunkLength = new ConcurrentHashMap<>();
     private static final Map<String, BiConsumer<String, Integer>> chunkRequest = new ConcurrentHashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final Map<String, Consumer<ChunkProgress>> progressCallbacks = new ConcurrentHashMap<>();
+
+    // Progress data class
+    public static class ChunkProgress {
+        public final String filename;
+        public final int currentChunk;
+        public final int totalChunks;
+        public final boolean isCompleted;
+
+        public ChunkProgress(String filename, int currentChunk, int totalChunks, boolean isCompleted) {
+            this.filename = filename;
+            this.currentChunk = currentChunk;
+            this.totalChunks = totalChunks;
+            this.isCompleted = isCompleted;
+        }
+    }
+
+    // New method that accepts progress callback
+    public static void startSendFileWithProgressCallback(
+            InputStream inputStream,
+            String filename,
+            Consumer<ChunkProgress> onProgressUpdate) {
+
+        // Store the progress callback
+        if (onProgressUpdate != null) {
+            progressCallbacks.put(filename, onProgressUpdate);
+        }
+
+        // Start the regular upload process
+        startSendFile(inputStream, filename);
+    }
+
 
     public static void startSendFileAsync(File file) {
         new Thread(() -> startSendFile(file)).start();
@@ -127,6 +161,14 @@ public class FileUploader {
         parts = Math.max(parts, 1);
         chunkParts.put(fullFileName, parts);
 
+        //  Call progress callback when sending chunk
+        Consumer<ChunkProgress> progressCallback = progressCallbacks.get(fullFileName);
+        if (progressCallback != null) {
+            ChunkProgress progress = new ChunkProgress(fullFileName, chunkNumber, parts, false);
+            progressCallback.accept(progress);
+        }
+
+
         String base64Chunk = Base64.getEncoder().encodeToString(chunkData);
         FileChunk fileChunkObject = new FileChunk(fullFileName, base64Chunk, chunkNumber, parts);
 
@@ -168,11 +210,20 @@ public class FileUploader {
 
         if (nextChunkNumber > totalChunks) {
             System.out.println("Upload completed for " + fullFileName);
+            // Call progress callback for completion
+            Consumer<ChunkProgress> progressCallback = progressCallbacks.get(fullFileName);
+            if (progressCallback != null) {
+                ChunkProgress progress = new ChunkProgress(fullFileName, totalChunks, totalChunks, true);
+                progressCallback.accept(progress);
+                progressCallbacks.remove(fullFileName); // Clean up callback
+            }
+
             upload.remove(fullFileName);
             chunkLength.remove(fullFileName);
             chunkParts.remove(fullFileName);
             chunkRequest.remove(fullFileName);
             refreshDirectory(fullFileName);
+
         } else if (chunkRequest.containsKey(fullFileName)) {
             BiConsumer<String, Integer> callback = chunkRequest.get(fullFileName);
             if (callback != null) {

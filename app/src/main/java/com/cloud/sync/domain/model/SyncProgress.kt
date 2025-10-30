@@ -3,7 +3,7 @@ package com.cloud.sync.domain.model
 /**
  * Represents the progress of a synchronization process.
  */
-data class SyncProgress(
-    val isSyncing: Boolean = false,
-    val text: String = "Ready."
+data class SyncPhotosProgress(
+    val photosSuccessfullySynced: Int = 0,
+    val photosFailedToSynced: Int = 0,
 )

@@ -2,6 +2,7 @@ package com.cloud.sync.ui.sync
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cloud.sync.common.PhotoSyncStatusManager
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.manager.interfaces.IBackgroundSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,8 +33,48 @@ class SyncViewModel @Inject constructor(
 
         // Observe full scan progress from the service via SyncStatusManager
         viewModelScope.launch {
-            SyncStatusManager.progress.collect { progress ->
-                _uiState.update { it.copy(isFullScanInProgress = progress.isSyncing, statusText = progress.text) }
+            SyncStatusManager.isSyncing.collect { isSyncing ->
+                _uiState.update {
+                    it.copy(
+                        isFullScanInProgress = isSyncing
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            SyncStatusManager.successfulSyncPhotosCount.collect { count ->
+                _uiState.update {
+                    it.copy(
+                        completedPhotos = count
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            SyncStatusManager.failedSyncPhotosCount.collect { count ->
+                _uiState.update {
+                    it.copy(
+                        failedPhotos = count
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            SyncStatusManager.discoveredPhotosCount.collect { count ->
+                _uiState.update {
+                    it.copy(
+                        totalPhotosToBeUploaded = count
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            PhotoSyncStatusManager.currentPhotoProgress.collect {progress ->
+                _uiState.update {
+                    it.copy(
+                        progress = progress
+                    )
+                }
             }
         }
     }
