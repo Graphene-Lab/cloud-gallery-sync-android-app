@@ -18,20 +18,21 @@ public class SessionManager {
         return currentSession;
     }
 
-    private static void tryLoadSession() {
+    public static void tryLoadSession() {
         try {
-            sessionLoaded = true; // Mark as loaded to prevent infinite recursion
             RequestManager.persistenceCallback.loadSession()
-                .thenAccept(loadedSession -> {
-                    if (loadedSession != null && loadedSession.getClientId() != null) {
-                        // Only replace current session if we got a valid one
-                        currentSession = loadedSession;
-                        System.out.println("Loaded saved session with clientId: " + loadedSession.getClientId());
-                    }
-                }).exceptionally(ex -> {
-                    System.err.println("Error loading session: " + ex.getMessage());
-                    return null;
-                });
+                    .thenAccept(loadedSession -> {
+                        if (loadedSession != null && loadedSession.getClientId() != null) {
+                            // Only replace current session if we got a valid one
+                            currentSession = loadedSession;
+                            System.out.println("Loaded saved session with clientId: " + loadedSession.getClientId());
+                            // Mark as loaded to prevent infinite recursion
+                            sessionLoaded = true;
+                        }
+                    }).exceptionally(ex -> {
+                        System.err.println("Error loading session: " + ex.getMessage());
+                        return null;
+                    });
         } catch (Exception e) {
             System.err.println("Exception while trying to load session: " + e.getMessage());
             // Continue with current session on error

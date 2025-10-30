@@ -67,6 +67,8 @@ class CommunicationLibInitializer @Inject constructor(
                 }
             }
         })
+        //important! before requests are made we need to load session data.
+        SessionManager.tryLoadSession()
     }
 
 }

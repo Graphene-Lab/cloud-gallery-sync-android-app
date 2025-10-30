@@ -124,18 +124,19 @@ class SessionRepository @Inject constructor(
             session.qRkey = sessionData.qrKey
             session.publicKeyB64 = sessionData.publicKeyB64
 
+            // TODO: fix this issue
             // Handle public key if needed (public key can be recreated from base64)
-            sessionData.publicKeyB64?.let { pubKeyB64 ->
-                try {
-                    val keyFactory = java.security.KeyFactory.getInstance("RSA")
-                    val keyBytes = java.util.Base64.getDecoder().decode(pubKeyB64)
-                    val keySpec = java.security.spec.X509EncodedKeySpec(keyBytes)
-                    val publicKey = keyFactory.generatePublic(keySpec)
-                    session.publicKey = publicKey
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to restore public key from base64", e)
-                }
-            }
+//            sessionData.publicKeyB64?.let { pubKeyB64 ->
+//                try {
+//                    val keyFactory = java.security.KeyFactory.getInstance("RSA")
+//                    val keyBytes = java.util.Base64.getDecoder().decode(pubKeyB64)
+//                    val keySpec = java.security.spec.X509EncodedKeySpec(keyBytes)
+//                    val publicKey = keyFactory.generatePublic(keySpec)
+//                    session.publicKey = publicKey
+//                } catch (e: Exception) {
+//                    Log.e(TAG, "Failed to restore public key from base64", e)
+//                }
+//            }
 
             Log.d(TAG, "Communication session loaded successfully")
             session
