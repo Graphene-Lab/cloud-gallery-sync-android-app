@@ -2,6 +2,7 @@ package com.cloud.sync.manager
 
 import android.content.ContentResolver
 import com.cloud.communication.cryto.FileUploader
+import com.cloud.sync.BuildConfig
 import com.cloud.sync.common.PhotoSyncStatusManager
 import com.cloud.sync.common.PhotoSyncStatusManager.uploadedPhotosCount
 import com.cloud.sync.common.SyncStatusManager
@@ -35,7 +36,7 @@ class FullScanProcessManager @Inject constructor(
 ) : IFullScanProcessManager {
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
-        syncIntervalRepository.clearAllData()// TODO: Remove before production.
+        if (BuildConfig.DEBUG) syncIntervalRepository.clearAllData()// TODO: Note - clears synced photos.
         val allIntervals = syncIntervalRepository.syncedIntervals.first().toMutableList()
         // Ensure the initial 0-timestamp interval exists for complete coverage.
         if (allIntervals.none { it.start == 0L }) {
