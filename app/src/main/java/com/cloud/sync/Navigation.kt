@@ -1,7 +1,7 @@
 package com.cloud.sync
 
+import android.util.Log
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -17,19 +17,10 @@ import com.cloud.sync.ui.sync.SyncScreen
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // Check if we're in debug mode
-    if (BuildConfig.DEBUG) {
-        LaunchedEffect(Unit) {
-            // Navigate directly to SyncScreen
-            navController.navigate("login") {
-                popUpTo(0) // Clear back stack
-            }
-        }
-    }
 
     NavHost(
         navController = navController,
-        startDestination = "scan"
+        startDestination = if (BuildConfig.DEBUG) "login" else "scan"
     ) {
 
         composable("scan") {
@@ -63,6 +54,7 @@ fun AppNavigation() {
 
         composable("login") {
             LoginScreen(onLoginSuccess = {
+                Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
                 navController.navigate("sync") {
                     popUpTo("login") {
                         inclusive = true

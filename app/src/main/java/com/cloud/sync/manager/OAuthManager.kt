@@ -2,6 +2,7 @@ package com.cloud.sync.manager
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import net.openid.appauth.*
 import javax.inject.Inject
@@ -9,6 +10,7 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import androidx.core.net.toUri
+import com.cloud.sync.BuildConfig
 import com.cloud.sync.data.repository.OauthTokenRepository
 import com.cloud.sync.manager.interfaces.IOAuthManager
 import dagger.hilt.android.scopes.ViewModelScoped
@@ -19,11 +21,14 @@ class OAuthManager @Inject constructor(
     private val oauthTokenRepository: OauthTokenRepository
 ) : IOAuthManager {
     private val authService = AuthorizationService(context)
-
     private val serviceConfig = AuthorizationServiceConfiguration(
         "https://cloudkeycloak.duckdns.org/realms/cloud/protocol/openid-connect/auth".toUri(),
         "https://cloudkeycloak.duckdns.org/realms/cloud/protocol/openid-connect/token".toUri()
     )
+
+    companion object {
+        private const val TAG = "OAuthManager"
+    }
 
     override fun getAuthIntent(): Intent {
         val authRequest = AuthorizationRequest.Builder(
@@ -71,7 +76,8 @@ class OAuthManager @Inject constructor(
 
         // Save and return the validated access token
         oauthTokenRepository.saveTokens(accessToken, refreshToken)
-        println("Access Tokens saved: $accessToken")
+        Log.w(TAG, "exchangeCodeForToken: access token saved")
+        if (BuildConfig.DEBUG) Log.d(TAG, "saved accessToken: $accessToken")
 //        return accessToken
     }
 }

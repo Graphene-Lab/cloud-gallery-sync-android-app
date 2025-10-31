@@ -36,23 +36,24 @@ class ProfileViewModel @Inject constructor(
     private fun loadCurrentSubscriptionPlan() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingPlan = true, planError = null) }
-            
-            try {
-                val currentPlan = cloudSpaceRepository.getCurrentSubscriptionPlan()
-                _uiState.update { 
+            cloudSpaceRepository.getCurrentSubscriptionPlan().onSuccess { currentPlan ->
+                _uiState.update {
                     it.copy(
                         currentPlan = currentPlan,
                         isLoadingPlan = false
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update { 
-                    it.copy(
-                        isLoadingPlan = false,
-                        planError = e.message ?: "Failed to load subscription plan"
-                    )
-                }
+                return@onSuccess
             }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingPlan = false,
+                            planError = e.message ?: "Failed to load subscription plan"
+                        )
+                    }
+                    return@onFailure
+                }
         }
     }
 
