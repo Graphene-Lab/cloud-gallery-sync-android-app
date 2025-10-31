@@ -1,13 +1,16 @@
 package com.cloud.sync
 
+import android.util.Log
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.cloud.sync.ui.auth.AuthScreen
+import com.cloud.sync.ui.login.LoginScreen
+import com.cloud.sync.ui.profile.ProfileScreen
 import com.cloud.sync.ui.mnemonic.MnemonicScreen
 import com.cloud.sync.ui.scan.ScanScreen
+import com.cloud.sync.ui.subscription.SubscriptionScreen
 import com.cloud.sync.ui.sync.SyncScreen
 
 
@@ -15,19 +18,10 @@ import com.cloud.sync.ui.sync.SyncScreen
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // Check if we're in debug mode
-    if (BuildConfig.DEBUG) {
-        LaunchedEffect(Unit) {
-            // Navigate directly to SyncScreen
-            navController.navigate("mnemonic") {
-                popUpTo(0) // Clear back stack
-            }
-        }
-    }
 
     NavHost(
         navController = navController,
-        startDestination = "scan"
+        startDestination = if (BuildConfig.DEBUG) "login" else "scan"
     ) {
 
         composable("scan") {
@@ -52,7 +46,42 @@ fun AppNavigation() {
             route = "sync",
 //            deepLinks = listOf(navDeepLink { uriPattern = "test://debug/sync-screen/{content}" }),
         ) { backStackEntry ->
-            SyncScreen()
+            SyncScreen(
+                onNavigateToProfile = {
+                    navController.navigate("profile")
+                }
+            )
+        }
+
+        composable("login") {
+            LoginScreen(onLoginSuccess = {
+                Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
+                navController.navigate("sync") {
+                    popUpTo("login") {
+                        inclusive = true
+                    }
+                }
+            })
+        }
+
+        composable("profile") {
+            ProfileScreen(
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo(0) // Clear the entire back stack
+                    }
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToSubscription = {
+                    navController.navigate("subscription")
+                }
+            )
+        }
+
+        composable("subscription") {
+            SubscriptionScreen()
         }
 
         composable("mnemonic") {

@@ -1,5 +1,10 @@
 package com.cloud.sync.manager
 
+import android.content.ContentResolver
+import com.cloud.communication.cryto.FileUploader
+import com.cloud.sync.BuildConfig
+import com.cloud.sync.common.PhotoSyncStatusManager
+import com.cloud.sync.common.PhotoSyncStatusManager.uploadedPhotosCount
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
@@ -7,10 +12,11 @@ import com.cloud.sync.domain.model.TimeInterval
 import com.cloud.sync.domain.repositroy.IGalleryRepository
 import com.cloud.sync.domain.repositroy.ISyncRepository
 import com.cloud.sync.manager.interfaces.IFullScanProcessManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
@@ -24,10 +30,13 @@ class FullScanProcessManager @Inject constructor(
     private val syncIntervalRepository: ISyncRepository,
     private val galleryRepository: IGalleryRepository,
     private val syncConfig: SyncConfig,
+    private val contentResolver: ContentResolver
+
+
 ) : IFullScanProcessManager {
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
-        syncIntervalRepository.clearAllData()// TODO: Remove before production.
+        if (BuildConfig.DEBUG) syncIntervalRepository.clearAllData()// TODO: Note - clears synced photos.
         val allIntervals = syncIntervalRepository.syncedIntervals.first().toMutableList()
         // Ensure the initial 0-timestamp interval exists for complete coverage.
         if (allIntervals.none { it.start == 0L }) {
@@ -59,9 +68,9 @@ class FullScanProcessManager @Inject constructor(
             syncAndSaveInBatches(
                 currentCoroutineContext,
                 photosInGap,
-                "Syncing gap...",
                 onBatchSave
             )
+            SyncStatusManager.increaseDiscoveredPhotosCount(photosInGap.size)
         }
 
         val mergedInterval = mergeTwoIntervals(tempInterval1, interval2)
@@ -94,9 +103,9 @@ class FullScanProcessManager @Inject constructor(
             syncAndSaveInBatches(
                 currentCoroutineContext,
                 photosInTail,
-                "Finalizing...",
                 onBatchSave
             )
+            SyncStatusManager.increaseDiscoveredPhotosCount(photosInTail.size)
         }
         return currentIntervals
     }
@@ -112,9 +121,8 @@ class FullScanProcessManager @Inject constructor(
     private suspend fun syncAndSaveInBatches(
         context: CoroutineContext,
         photos: List<GalleryPhoto>,
-        statusPrefix: String,
-        onBatchSave: suspend (Long) -> Unit
-    ) {
+        onBatchSave: suspend (Long) -> Unit,
+    ) = withContext(Dispatchers.IO) { // Move the entire function to IO dispatcher
         val batchSize = syncConfig.batchSize
         var photosInBatch = 0
         var lastSyncedTimestamp = 0L
@@ -122,25 +130,56 @@ class FullScanProcessManager @Inject constructor(
         photos.forEachIndexed { index, photo ->
             context.ensureActive() // Check for parent coroutine cancellation.
 
-            // TODO: Integrate actual file upload mechanism here.
-            //  FileUploader.startSendFileAsync(File(photo.path))
-            withContext(Dispatchers.IO) { // Ensure simulated network operation runs on IO dispatcher.
-                delay(100) // Simulate upload time.
-                println("Uploaded ${photo.displayName}") // Log for development/debugging.
+            try {
+                contentResolver.openInputStream(photo.path)?.use { inputStream ->
+                    // Read all bytes immediately to avoid stream closing issues
+                    val bytes = inputStream.readBytes()
+                    // Create a new ByteArrayInputStream for the FileUploader
+                    java.io.ByteArrayInputStream(bytes).use { byteStream ->
+                        // Use the new method with progress callback
+                        FileUploader.startSendFileWithProgressCallback(
+                            byteStream,
+                            photo.displayName
+                        ) { progress ->
+                            // This callback runs on background thread, switching to Main for UI updates
+                            CoroutineScope(Dispatchers.Main).launch {
+                                val uploadedPhotosCount = uploadedPhotosCount()
+                                if (progress.isCompleted) {
+                                    PhotoSyncStatusManager.markPhotoCompleted(progress.filename)
+                                    SyncStatusManager.updateSuccessfulSyncPhotosCount()
+                                    SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched();
+                                    return@launch
+                                } else {
+                                    PhotoSyncStatusManager.updatePhotoProgress(
+                                        filename = progress.filename,
+                                        currentChunk = progress.currentChunk,
+                                        totalChunks = progress.totalChunks
+                                    )
+                                }
+
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                println("Failed to upload ${photo.displayName}: ${e.message}")
             }
 
             lastSyncedTimestamp = photo.dateAdded
 
-            SyncStatusManager.update(true, "$statusPrefix (${index + 1}/${photos.size})")
-
             if (++photosInBatch >= batchSize) {
-                onBatchSave(lastSyncedTimestamp)
+                // Switch to main context for saving intervals
+                withContext(Dispatchers.Main) {
+                    onBatchSave(lastSyncedTimestamp)
+                }
                 photosInBatch = 0
             }
         }
-        // Save any remaining photos that didn't form a full batch.
+
         if (photosInBatch > 0) {
-            onBatchSave(lastSyncedTimestamp)
+            withContext(Dispatchers.Main) {
+                onBatchSave(lastSyncedTimestamp)
+            }
         }
     }
 }

@@ -4,7 +4,6 @@ import kotlin.Pair;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -22,7 +21,6 @@ import static com.cloud.communication.cryto.ConversionUtils.joinBuffers;
 import static com.cloud.communication.cryto.CryptoUtils.alertBox;
 import static com.cloud.communication.cryto.CryptoUtils.splitData;
 import static com.cloud.communication.cryto.FileUploader.handleServerUploadResponse;
-import static com.cloud.communication.cryto.FileUploader.startSendFileAsync;
 import static com.cloud.communication.cryto.QrCodeHandler.setClient;
 import static com.cloud.communication.cryto.encryption.AesEncryption.decryptData;
 import static com.cloud.communication.cryto.encryption.AesEncryption.encryptData;
@@ -31,22 +29,24 @@ import static com.cloud.communication.cryto.encryption.XorEncryption.decryptXorA
 
 import com.cloud.communication.cryto.encryption.RsaEncryption;
 
-
 public class RequestManager {
 
     private static final List<Pair<Integer, byte[]>> spooler = new ArrayList<>();
     private static final AtomicInteger concurrentRequest = new AtomicInteger(0);
     private static final int maxConcurrentRequest = 5;
-
     private static final OkHttpClient client = new OkHttpClient();
+    private static final ExecutorService executor = Executors.newCachedThreadPool();
 
-    // TODO: add to settings file
-    public static String proxy = "http://proxy.tc0.it:5050";
 //    public static String proxy = "http://195.20.235.5:5050";
 
+    public static String proxy = "http://proxy.tc0.it:5050";
 
-    // Executor for background tasks (like Kotlin coroutines)
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
+    // Session persistence callback
+    public static SessionPersistenceCallback persistenceCallback;
+
+    public static void setSessionPersistenceCallback(SessionPersistenceCallback callback) {
+        persistenceCallback = callback;
+    }
 
     public static synchronized void enqueueRequest(Integer commandId, byte[] data) {
         spooler.add(new Pair<>(commandId, data));
@@ -72,7 +72,6 @@ public class RequestManager {
             requestDone();
             return;
         }
-
         byte[] requestData = data != null ? data : new byte[0];
         String proxyUrl = proxy + "/data";
         HttpUrl baseUrl = HttpUrl.parse(proxyUrl);
@@ -104,19 +103,16 @@ public class RequestManager {
             return;
         }
 
-
         if (purpose != null) {
             postRequest(requestBuilder, requestData);
             return;
         }
-
 
         if (SessionManager.getCurrentSession().getDeviceKey() == null) {
             alertBox("Unregistered user. You need to log in to the server to initialize the encryption.");
             requestDone();
             return;
         }
-
 
         byte[] cmdBuffer = int32ToBuffer(commandId);
         if (requestData.length == 0) {
@@ -125,7 +121,6 @@ public class RequestManager {
             requestData = joinBuffers(cmdBuffer, requestData);
         }
 
-        // Encrypt and send asynchronously
         byte[] finalRequestData = requestData;
         byte[] encrypted;
         try {
@@ -196,7 +191,6 @@ public class RequestManager {
                 return;
             }
 
-            // Handle response asynchronously
             executor.submit(() -> {
                 try {
                     handleResponse(responseText);
@@ -241,52 +235,48 @@ public class RequestManager {
         tryStartNext();
     }
 
-
     public static void getEncryptedQR(String encryptedDataB64) throws Exception {
         byte[] encryptedData = base64ToBuffer(encryptedDataB64);
         byte[] decryptedData = decryptXorAB(SessionManager.getCurrentSession().getQRkey(), encryptedData);
-        SessionManager.getCurrentSession().setQRkey(null); // clear QR key
+        SessionManager.getCurrentSession().setQRkey(null);
 
         int offset = 0;
-        // First byte is 'type'
         int type = decryptedData[offset] & 0xFF;
         if (type != 2) {
             throw new RuntimeException("QR code format not supported!");
         }
         offset += 1;
 
-        int mSize = 2048 / 8; // 256 bytes modulus size
+        int mSize = 2048 / 8;
         byte[] modulus = Arrays.copyOfRange(decryptedData, offset, offset + mSize);
         offset += mSize;
         byte[] exponent = Arrays.copyOfRange(decryptedData, offset, offset + 3);
         PublicKey rsaPubKey = createRsaPublicKey(modulus, exponent);
         setClient(rsaPubKey);
+        
+        // Save session after QR processing
+        saveSessionIfCallbackExists();
     }
 
-
     public static void onResponse(byte[] binary) {
-
-        // Parse first 4 bytes into int (big-endian, like JS DataView by default)
         ByteBuffer buffer = ByteBuffer.wrap(binary);
-        buffer.order(ByteOrder.LITTLE_ENDIAN); // network order
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        int commandId = buffer.getInt(); // read first 4 bytes
+        int commandId = buffer.getInt();
         String command = getCommandName(commandId);
+
+        System.out.println("Command ID: " + commandId);
+        System.out.println("Command: " + command);
         if (Command.Authentication.getId() == commandId) {
+            System.out.println("Authentication success!");
             AuthSuccess();
             return;
         }
 
-        // The remaining data
         byte[] data = Arrays.copyOfRange(binary, 4, binary.length);
-
-        // Split data to params
         var params = splitData(data);
-
-        // For example:
-        System.out.println("Command ID: " + commandId);
-        System.out.println("Command: " + command);
         System.out.println("Params: " + params);
+
         if(Command.SetFile.getId() == commandId){
             handleServerUploadResponse(params);
         }
@@ -296,21 +286,18 @@ public class RequestManager {
     }
 
     private static void AuthSuccess() {
-        File file = new File("C:/Users/Ramazan/Downloads/the_cloud_ppt.pdf");
-//        var file2 = new File("C:\\Users\\Ramazan\\Downloads\\encrypted messenger.pdf");
-        startSendFileAsync(file);
-//        startSendFileAsync(file2);
-        //TODO: SaveClient();
+        System.out.println("Authentication success!, saving session...");
+        saveSessionIfCallbackExists();
     }
-
-
-//    private static class Pair<F, S> {
-//        public final F first;
-//        public final S second;
-//
-//        Pair(F first, S second) {
-//            this.first = first;
-//            this.second = second;
-//        }
-//    }
+    
+    private static void saveSessionIfCallbackExists() {
+        if (persistenceCallback != null) {
+            try {
+                persistenceCallback.saveSession(SessionManager.getCurrentSession());
+                System.out.println("Session saved successfully!");
+            } catch (Exception e) {
+                persistenceCallback.onSaveError("Failed to save session: " + e.getMessage());
+            }
+        }
+    }
 }

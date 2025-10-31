@@ -3,6 +3,7 @@ package com.cloud.sync
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.cloud.sync.common.CommunicationLibInitializer
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -18,11 +19,16 @@ class MyApp : Application(), Configuration.Provider {
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .build()
 
+    @Inject
+    lateinit var communicationLibInitializer: CommunicationLibInitializer
+
+
     // Manually initialize WorkManager
     override fun onCreate() {
         super.onCreate()
         // WorkManager.initialize(this, workManagerConfiguration) is now implicitly called
         // because we implement Configuration.Provider. The key is that this now happens
         // AFTER Hilt injection is complete.
+        communicationLibInitializer.initialize()
     }
 }

@@ -1,4 +1,6 @@
 import com.android.build.api.dsl.Packaging
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,6 +9,12 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+val appPropsFile = rootProject.file("application.properties")
+val appProps = Properties()
+if (appPropsFile.exists()) {
+    appProps.load(FileInputStream(appPropsFile))
 }
 
 android {
@@ -21,13 +29,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.cloud.sync")
     }
 
     buildTypes {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
+
             buildConfigField("boolean", "IS_DEBUG", "true")
+            buildConfigField("String", "STRIPE_PUBLIC_KEY", "\"${appProps.getProperty("STRIPE_PUBLIC_KEY_DEBUG")}\"")
+            buildConfigField("String", "BASE_URL", "\"${appProps.getProperty("BASE_URL_DEBUG")}\"")
         }
         release {
             isMinifyEnabled = false
@@ -35,6 +48,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("boolean", "IS_DEBUG", "false")
+            buildConfigField("String", "STRIPE_PUBLIC_KEY", "\"${appProps.getProperty("STRIPE_PUBLIC_KEY_RELEASE")}\"")
+            buildConfigField("String", "BASE_URL", "\"${appProps.getProperty("BASE_URL_RELEASE")}\"")
         }
     }
     compileOptions {
@@ -112,9 +128,27 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // OAuth
+    implementation(libs.appauth)
+    implementation(libs.jwtdecode)
+
+    // Secure Storage
+    implementation(libs.androidx.security.crypto)
+
+    // Stripe for Android
+    implementation(libs.stripe.android)
+
+    // Retrofit for networking
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.okhttp.core)
+    implementation(libs.logging.interceptor)
+
+
+
     // Client-side Encryption
     implementation(libs.kotlin.bip39)
 
-    // add communication library
+    // communicationLib
     implementation(project(":communicationLib"))
 }

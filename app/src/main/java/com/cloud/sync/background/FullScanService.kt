@@ -41,7 +41,7 @@ class FullScanService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_START -> if (!SyncStatusManager.isSyncing()) {
+            ACTION_START -> if (!SyncStatusManager.isSyncing.value) {
                 startServiceLogic()
             }
             ACTION_STOP -> stopSync()
@@ -55,8 +55,8 @@ class FullScanService : Service() {
     private fun startServiceLogic() {
         // Collect status updates from the processor to manage the foreground notification.
         serviceScope.launch {
-            SyncStatusManager.progress.collect { progress ->
-                updateForegroundNotification(progress.text)
+            SyncStatusManager.successfulSyncPhotosCount.collect { successfulSyncPhotosCount ->
+                updateForegroundNotification(successfulSyncPhotosCount.toString())
             }
         }
         // Launch the core full scan operation in a separate coroutine.
@@ -70,7 +70,7 @@ class FullScanService : Service() {
      */
     private fun stopSync() {
         serviceScope.coroutineContext.cancelChildren()
-        SyncStatusManager.update(false, "Full scan stopped.")
+        SyncStatusManager.updateSyncStatus(false)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -80,11 +80,16 @@ class FullScanService : Service() {
      * This function delegates core operations to [fullScanProcessor].
      */
     private suspend fun startFullScanLogicInternal() {
-        SyncStatusManager.update(true, "Preparing full scan...")
+        SyncStatusManager.updateSyncStatus(true)
 
         try {
             var allIntervals = fullScanProcessor.initializeIntervals()
-
+            if (allIntervals.isEmpty()) {
+                SyncStatusManager.updateSyncStatus(false)
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return
+            }
             // Process gaps and merge intervals until less than two remain.
             while (allIntervals.size >= 2) {
                 coroutineContext.ensureActive() // Ensure the coroutine is still active for cancellation.
@@ -95,11 +100,10 @@ class FullScanService : Service() {
             // Process any remaining photos at the end of the timeline.
             fullScanProcessor.processTailEnd(allIntervals, coroutineContext)
 
-            SyncStatusManager.update(false, "Full scan complete!")
         } catch (e: Exception) {
             // Re-throw CancellationException to propagate cancellation correctly.
             if (e is CancellationException) throw e
-            SyncStatusManager.update(false, "Error: ${e.message}")
+            SyncStatusManager.updateSyncStatus(false)
         } finally {
             // Ensure service stops and notification is removed even if an error occurs.
             stopForeground(STOP_FOREGROUND_REMOVE)
