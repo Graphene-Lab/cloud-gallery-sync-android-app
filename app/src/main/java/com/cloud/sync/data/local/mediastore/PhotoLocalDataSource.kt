@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import com.cloud.sync.BuildConfig
 import com.cloud.sync.domain.model.GalleryPhoto
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -48,9 +49,9 @@ class PhotoLocalDataSource @Inject constructor(
         }
 
         selectionParts.add("${MediaStore.Images.Media.DATA} LIKE ?")
-        //TODO: put TestCamera for debug mode BuildConfig
+        val cameraFolder = if (BuildConfig.DEBUG) DEBUG_CAMERA_FOLDER else RELEASE_CAMERA_FOLDER
         val dcimCameraPath =
-            "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath}/TestCamera"
+            "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath}/$cameraFolder"
         selectionArgsList.add("$dcimCameraPath%")
 
         val selection = selectionParts.joinToString(" AND ")
@@ -67,8 +68,10 @@ class PhotoLocalDataSource @Inject constructor(
         )?.use { cursor ->
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-                val dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED))
-                val displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
+                val dateAdded =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED))
+                val displayName =
+                    cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
                 val contentUri: Uri = ContentUris.withAppendedId(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     id
@@ -87,4 +90,10 @@ class PhotoLocalDataSource @Inject constructor(
 
         return photos
     }
+
+    companion object {
+        private const val DEBUG_CAMERA_FOLDER = "TestCamera"
+        private const val RELEASE_CAMERA_FOLDER = "Camera"
+    }
+
 }
