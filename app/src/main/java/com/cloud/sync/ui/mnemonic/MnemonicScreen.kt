@@ -4,31 +4,13 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,11 +18,13 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MnemonicScreen(
     mnemonicViewModel: MnemonicViewModel = hiltViewModel(),
@@ -49,44 +33,108 @@ fun MnemonicScreen(
     val uiState by mnemonicViewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.isKeySaved) {
-       if(uiState.isKeySaved  ) onMnemonicConfirmed()
+        if (uiState.isKeySaved) onMnemonicConfirmed()
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(16.dp)
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator()
-            } else if (uiState.mnemonic.isNotBlank()) {
-                MnemonicDisplay(uiState.mnemonic)
-                Spacer(modifier = Modifier.height(32.dp))
-                Button(
-                    onClick = { mnemonicViewModel.saveMasterKeyFromMnemonic() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
+            // Back button for non-initial modes
+            if (uiState.mode != MnemonicMode.CHOOSE_ACTION) {
+                IconButton(
+                    onClick = { mnemonicViewModel.goBack() },
+                    modifier = Modifier.align(Alignment.Start)
                 ) {
-                    Text("I have saved my phrase, Continue")
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
-            } else {
-                InitialMnemonicView(onGenerate = { mnemonicViewModel.generateMnemonic(it) })
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                when (uiState.mode) {
+                    MnemonicMode.CHOOSE_ACTION -> {
+                        ChooseActionView(
+                            onGenerateNew = { mnemonicViewModel.selectGenerateNew() },
+                            onRecover = { mnemonicViewModel.selectRecover() }
+                        )
+                    }
+                    MnemonicMode.GENERATE_NEW -> {
+                        WordCountSelectionView(
+                            onGenerate = { mnemonicViewModel.generateMnemonic(it) }
+                        )
+                    }
+                    MnemonicMode.DISPLAY_GENERATED -> {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator()
+                        } else {
+                            MnemonicDisplay(
+                                mnemonic = uiState.mnemonic,
+                                onConfirm = { mnemonicViewModel.saveMasterKeyFromMnemonic() }
+                            )
+                        }
+                    }
+                    MnemonicMode.RECOVER_INPUT -> {
+                        RecoverInputView(
+                            recoveryMnemonic = uiState.recoveryMnemonic,
+                            isRecovering = uiState.isRecovering,
+                            errorMessage = uiState.errorMessage,
+                            onMnemonicChange = { mnemonicViewModel.updateRecoveryMnemonic(it) },
+                            onRecover = { mnemonicViewModel.recoverFromMnemonic() }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun InitialMnemonicView(onGenerate: (Int) -> Unit) {
+private fun ChooseActionView(
+    onGenerateNew: () -> Unit,
+    onRecover: () -> Unit
+) {
     Text(
         "Secure Your Account",
         style = MaterialTheme.typography.headlineMedium
     )
+    Spacer(modifier = Modifier.height(32.dp))
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Button(
+            onClick = onGenerateNew,
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text("Generate New Passphrase")
+        }
+        
+        OutlinedButton(
+            onClick = onRecover,
+            modifier = Modifier.fillMaxWidth(0.8f)
+
+        ) {
+            Text("Recover from Existing one")
+        }
+    }
+}
+
+@Composable
+private fun WordCountSelectionView(onGenerate: (Int) -> Unit) {
+    Text(
+        "Choose Passphrase Length",
+        style = MaterialTheme.typography.headlineMedium
+    )
     Spacer(modifier = Modifier.height(16.dp))
+    
     Row(
         verticalAlignment = Alignment.Top,
         modifier = Modifier.fillMaxWidth(0.9f)
@@ -101,7 +149,7 @@ private fun InitialMnemonicView(onGenerate: (Int) -> Unit) {
         )
         Text(
             text = buildAnnotatedString {
-                append("Warning: This phrase is your ")
+                append("This passphrase is your ")
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                     append("only")
                 }
@@ -113,6 +161,7 @@ private fun InitialMnemonicView(onGenerate: (Int) -> Unit) {
         )
     }
     Spacer(modifier = Modifier.height(32.dp))
+    
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -122,27 +171,90 @@ private fun InitialMnemonicView(onGenerate: (Int) -> Unit) {
             onClick = { onGenerate(12) },
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text("Generate 12-Word Phrase")
+            Text("Generate 12-Word Passphrase")
         }
         Button(
             onClick = { onGenerate(24) },
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text("Generate 24-Word Phrase")
+            Text("Generate 24-Word Passphrase")
         }
     }
 }
 
 @Composable
-private fun MnemonicDisplay(mnemonic: String) {
+private fun RecoverInputView(
+    recoveryMnemonic: String,
+    isRecovering: Boolean,
+    errorMessage: String?,
+    onMnemonicChange: (String) -> Unit,
+    onRecover: () -> Unit
+) {
+    Text(
+        "Recover Your Account",
+        style = MaterialTheme.typography.headlineMedium
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    Text(
+        "Enter your 12 or 24-word recovery passphrase:",
+        style = MaterialTheme.typography.bodyLarge
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    OutlinedTextField(
+        value = recoveryMnemonic,
+        onValueChange = onMnemonicChange,
+        label = { Text("Recovery Passphrase") },
+        modifier = Modifier.fillMaxWidth(),
+        minLines = 3,
+        maxLines = 5,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+        isError = errorMessage != null,
+        enabled = !isRecovering
+    )
+    
+    errorMessage?.let {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = it,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+    
+    Spacer(modifier = Modifier.height(24.dp))
+    
+    Button(
+        onClick = onRecover,
+        enabled = recoveryMnemonic.isNotBlank() && !isRecovering,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (isRecovering) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Text(if (isRecovering) "Recovering..." else "Recover Account")
+    }
+}
+
+@Composable
+private fun MnemonicDisplay(
+    mnemonic: String,
+    onConfirm: () -> Unit
+) {
     val context = LocalContext.current
     val words = mnemonic.split(" ")
 
     Text(
-        "Your Mnemonic Phrase",
+        "Your Recovery Passphrase",
         style = MaterialTheme.typography.headlineSmall
     )
     Spacer(modifier = Modifier.height(16.dp))
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -164,16 +276,27 @@ private fun MnemonicDisplay(mnemonic: String) {
             }
         }
     }
+    
     Spacer(modifier = Modifier.height(16.dp))
+    
     OutlinedButton(
         onClick = {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Mnemonic Phrase", mnemonic)
+            val clip = ClipData.newPlainText("Recovery Passphrase", mnemonic)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(context, "Mnemonic copied to clipboard!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Recovery passphrase copied to clipboard!", Toast.LENGTH_SHORT).show()
         },
         modifier = Modifier.fillMaxWidth(0.8f)
     ) {
-        Text("Copy Phrase")
+        Text("Copy Passphrase")
+    }
+    
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    Button(
+        onClick = onConfirm,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("I have saved my passphrase, Continue")
     }
 }

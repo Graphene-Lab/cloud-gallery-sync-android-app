@@ -1,6 +1,5 @@
 package com.cloud.sync.ui.mnemonic
 
-
 import androidx.lifecycle.ViewModel
 import cash.z.ecc.android.bip39.Mnemonics
 import cash.z.ecc.android.bip39.toSeed
@@ -16,11 +15,24 @@ import javax.inject.Inject
 @HiltViewModel
 class MnemonicViewModel @Inject constructor(
     private val keyRepository: ICseMasterKeyRepository,
-) :
-    ViewModel() {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MnemonicUiState())
     val uiState: StateFlow<MnemonicUiState> = _uiState.asStateFlow()
+
+    fun selectGenerateNew() {
+        _uiState.update { it.copy(mode = MnemonicMode.GENERATE_NEW) }
+    }
+
+    fun selectRecover() {
+        _uiState.update { 
+            it.copy(
+                mode = MnemonicMode.RECOVER_INPUT,
+                errorMessage = null,
+                recoveryMnemonic = ""
+            ) 
+        }
+    }
 
     fun generateMnemonic(wordCount: Int = 12) {
         _uiState.update { it.copy(isLoading = true) }
@@ -33,11 +45,51 @@ class MnemonicViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 mnemonic = newMnemonic,
-                isLoading = false
+                isLoading = false,
+                mode = MnemonicMode.DISPLAY_GENERATED
             )
         }
     }
 
+    fun updateRecoveryMnemonic(mnemonic: String) {
+        _uiState.update { 
+            it.copy(
+                recoveryMnemonic = mnemonic,
+                errorMessage = null
+            ) 
+        }
+    }
+
+    fun recoverFromMnemonic() {
+        val mnemonic = _uiState.value.recoveryMnemonic.trim()
+        
+        if (mnemonic.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter your mnemonic phrase") }
+            return
+        }
+
+        _uiState.update { it.copy(isRecovering = true, errorMessage = null) }
+
+        try {
+            val mnemonicCode = Mnemonics.MnemonicCode(mnemonic)
+            val seed = mnemonicCode.toSeed()
+            keyRepository.saveKey(seed)
+            
+            _uiState.update { 
+                it.copy(
+                    isKeySaved = true,
+                    isRecovering = false
+                ) 
+            }
+        } catch (e: Exception) {
+            _uiState.update { 
+                it.copy(
+                    errorMessage = "Invalid mnemonic phrase. Please check and try again.",
+                    isRecovering = false
+                ) 
+            }
+        }
+    }
 
     fun saveMasterKeyFromMnemonic() {
         if (uiState.value.mnemonic.isNotBlank()) {
@@ -45,6 +97,17 @@ class MnemonicViewModel @Inject constructor(
             val seed = mnemonicCode.toSeed()
             keyRepository.saveKey(seed)
             _uiState.update { it.copy(isKeySaved = true) }
+        }
+    }
+
+    fun goBack() {
+        _uiState.update { 
+            it.copy(
+                mode = MnemonicMode.CHOOSE_ACTION,
+                errorMessage = null,
+                recoveryMnemonic = "",
+                mnemonic = ""
+            ) 
         }
     }
 }
