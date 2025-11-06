@@ -23,8 +23,11 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import javax.inject.Inject
-import kotlin.collections.forEachIndexed
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 /**
  * Concrete implementation of [com.cloud.sync.manager.interfaces.IFullScanProcessManager].
@@ -40,6 +43,8 @@ class FullScanProcessManager @Inject constructor(
 
 
     ) : IFullScanProcessManager {
+
+    private val concurrentLimit = Semaphore(10) // Allow max N concurrent operations
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
         if (BuildConfig.DEBUG) syncIntervalRepository.clearAllData()// TODO: Note - clears synced photos.
@@ -125,76 +130,75 @@ class FullScanProcessManager @Inject constructor(
 
 
     private suspend fun syncAndSaveInBatches(
-        context: CoroutineContext,
-        photos: List<GalleryPhoto>,
-        onBatchSave: suspend (Long) -> Unit,
-    ) = withContext(Dispatchers.IO) { // Move the entire function to IO dispatcher
-        val batchSize = syncConfig.batchSize
-        var photosInBatch = 0
-        var lastSyncedTimestamp = 0L
+    context: CoroutineContext,
+    photos: List<GalleryPhoto>,
+    onBatchSave: suspend (Long) -> Unit,
+) = withContext(Dispatchers.IO) {
+    val batchSize = syncConfig.batchSize
+    var lastSyncedTimestamp = 0L
 
-        photos.forEachIndexed { index, photo ->
-            context.ensureActive()
+    // Process photos in parallel batches
+    photos.chunked(batchSize).forEach { batch ->
+        val deferredResults = batch.mapIndexed { index, photo ->
+            async {
+                concurrentLimit.withPermit {
+                    context.ensureActive()
 
-            try {
-                // 1. Read original file content directly into memory
-                val originalBytes =
-                    contentResolver.openInputStream(photo.path)?.use { inputStream ->
-                        inputStream.readBytes()
-                    } ?: throw IOException("Failed to read photo") as Throwable
+                    try {
+                        // 1. Read original file content directly into memory
+                        val originalBytes =
+                            contentResolver.openInputStream(photo.path)?.use { inputStream ->
+                                inputStream.readBytes()
+                            } ?: throw IOException("Failed to read photo")
 
-                // 2. Get ZeroKnowledgeProof instance (injected)
+                        // 2. Generate encrypted filename from display name only
+                        val encryptedFilename = zeroKnowledgeProof?.EncryptFullFileName(photo.displayName)
 
-                // 3. Generate encrypted filename from display name only
-                val encryptedFilename = zeroKnowledgeProof?.EncryptFullFileName(photo.displayName)
+                        // 3. Encrypt bytes directly in memory
+                        val encryptedBytes = zeroKnowledgeProof?.encryptBytes(
+                            originalBytes,
+                            photo.displayName,  // Use only filename, not path
+                            photo.dateAdded     // Use photo's original timestamp
+                        )
 
-                // 4. Encrypt bytes directly in memory
-                val encryptedBytes = zeroKnowledgeProof?.encryptBytes(
-                    originalBytes,
-                    photo.displayName,  // Use only filename, not path
-                    photo.dateAdded     // Use photo's original timestamp
-                )
-
-                // 5. Upload encrypted bytes with encrypted filename
-                ByteArrayInputStream(encryptedBytes).use { encryptedStream ->
-                    FileUploader.startSendFileWithProgressCallback(
-                        encryptedStream,
-                        encryptedFilename  // Server sees encrypted filename
-                    ) { progress ->
-                        CoroutineScope(Dispatchers.Main).launch {
-                            if (progress.isCompleted) {
-                                PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
-                                SyncStatusManager.updateSuccessfulSyncPhotosCount()
-                                SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
-                            } else {
-                                PhotoSyncStatusManager.updatePhotoProgress(
-                                    filename = photo.displayName, // Show original name in UI
-                                    currentChunk = progress.currentChunk,
-                                    totalChunks = progress.totalChunks
-                                )
+                        // 4. Upload encrypted bytes with encrypted filename
+                        ByteArrayInputStream(encryptedBytes).use { encryptedStream ->
+                            FileUploader.startSendFileWithProgressCallback(
+                                encryptedStream,
+                                encryptedFilename  // Server sees encrypted filename
+                            ) { progress ->
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    if (progress.isCompleted) {
+                                        PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
+                                        SyncStatusManager.updateSuccessfulSyncPhotosCount()
+                                        SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
+                                    } else {
+                                        PhotoSyncStatusManager.updatePhotoProgress(
+                                            filename = photo.displayName, // Show original name in UI
+                                            currentChunk = progress.currentChunk,
+                                            totalChunks = progress.totalChunks
+                                        )
+                                    }
+                                }
                             }
                         }
+                        photo.dateAdded // Return timestamp for batch tracking
+                    } catch (e: Exception) {
+                        Log.e("PhotoSync", "Failed to encrypt ${photo.displayName}", e)
+                        photo.dateAdded
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("PhotoSync", "Failed to encrypt ${photo.displayName}", e)
-            }
-
-            lastSyncedTimestamp = photo.dateAdded
-
-            if (++photosInBatch >= batchSize) {
-                // Switch to main context for saving intervals
-                withContext(Dispatchers.Main) {
-                    onBatchSave(lastSyncedTimestamp)
-                }
-                photosInBatch = 0
             }
         }
 
-        if (photosInBatch > 0) {
-            withContext(Dispatchers.Main) {
-                onBatchSave(lastSyncedTimestamp)
-            }
+        // Wait for all photos in the batch to complete
+        val timestamps = deferredResults.awaitAll()
+        lastSyncedTimestamp = timestamps.maxOrNull() ?: lastSyncedTimestamp
+
+        // Save batch progress
+        withContext(Dispatchers.Main) {
+            onBatchSave(lastSyncedTimestamp)
         }
     }
+}
 }
