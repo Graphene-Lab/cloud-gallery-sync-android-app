@@ -48,47 +48,64 @@ fun SyncScreen(
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         Text(text = "Status:", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            text = uiState.statusText,
-                            modifier = Modifier.padding(top = 8.dp),
-                            minLines = 2
-                        )
-                        Row {
-                            Text(
-                                text = "Uploaded Photos:",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = uiState.completedPhotos.toString(),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-                        Row {
-                            Text(
-                                text = "Failed Photos:",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = uiState.failedPhotos.toString(),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-                        Row {
-                            Text(
-                                text = "Discovered Photos:",
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                text = uiState.totalPhotosToBeUploaded.toString(),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
+                        if (!uiState.isFullScanInProgress) {
+                            if (uiState.completedPhotos > 0) {
+                                Text(
+                                    text = "Sync Successful, ${uiState.completedPhotos} photos uploaded",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(
+                                    text = "Ready to Sync",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
 
-                        Column {
-                            Text(text = "Progress Info:")
-                            Text(text = uiState.progress?.let { progress ->
-                                "${progress.filename} ${progress.currentChunk}/${progress.totalChunks}"
-                            } ?: "waiting...")
+                        } else {
+                            Text(
+                                text = "Sync in Progress",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            Row {
+                                Text(
+                                    text = "Uploaded Photos:",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = uiState.completedPhotos.toString(),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                            Row {
+                                Text(
+                                    text = "Failed Photos:",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = uiState.failedPhotos.toString(),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                            Row {
+                                Text(
+                                    text = "Discovered Photos:",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    text = uiState.totalPhotosToBeUploaded.toString(),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+
+                            Column {
+                                Text(text = "Progress Info:")
+                                Text(text = uiState.progress?.let { progress ->
+                                    "${progress.filename} ${progress.currentChunk}/${progress.totalChunks}"
+                                } ?: "waiting...")
+                            }
                         }
                     }
                 }
