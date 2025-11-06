@@ -21,4 +21,7 @@ class CseMasterKeyRepository @Inject constructor(
     override fun hasKey(): Boolean {
         return secureCseMasterKeyStorage.hasKey()
     }
+    override fun clearKey() {
+        secureCseMasterKeyStorage.clearKey()
+    }
 }

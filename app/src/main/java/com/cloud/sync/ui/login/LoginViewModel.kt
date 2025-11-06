@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.BuildConfig
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
+import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
 import com.cloud.sync.domain.repositroy.ISessionRepository
+import com.cloud.sync.manager.DataCenterCloudManager
 import com.cloud.sync.manager.OAuthManager
 import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +24,7 @@ class LoginViewModel @Inject constructor(
     private val oauthTokenRepository: IOauthTokenRepository,
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val sessionRepository: ISessionRepository,
+    private val cseMasterKeyRepository: ICseMasterKeyRepository,
     private val cloudManager: ICloudManager
 ) : ViewModel() {
     companion object {
@@ -71,25 +74,37 @@ class LoginViewModel @Inject constructor(
                     Log.d(TAG, "handleAuthResult: exchanging code for token")
                 }
                 _uiState.value = LoginUiState.Loading
-                
+
                 // Exchange code for token
                 oAuthManager.exchangeCodeForToken(intent)
 
                 if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "handleAuthResult: connecting to cloud")
+                    Log.d(TAG, "handleAuthResult: getting cloudsSpace credentials & connecting to cloud")
                 }
 
                 // Connect to cloud
                 cloudSpaceRepository.getCloudSpaceCredentials()
                     .onSuccess { credentials ->
-                        Log.d(TAG, "handleAuthResult: Connected to cloud")
                         if (BuildConfig.DEBUG) {
-                            Log.d(TAG, "credentials: ${credentials.qrEncrypted}")
+                            Log.d(TAG, "fetched cloudSpace credentials: ${credentials.qrEncrypted}")
                         }
-                        _uiState.value = LoginUiState.Authenticated
+                        cloudManager.pair(credentials.qrEncrypted, credentials.pin).onSuccess {
+                            Log.d(TAG, "handleAuthResult: Connected to cloud")
+
+                            _uiState.value = LoginUiState.Authenticated
+                        }
+                            .onFailure { exception ->
+                                Log.w(TAG, "handleAuthResult: Failed to connect to cloud", exception)
+                                _uiState.value =
+                                    LoginUiState.Error(exception.message ?: "Unknown error")
+                            }
                     }
                     .onFailure { exception ->
-                        Log.w(TAG, "handleAuthResult: Failed to connect to cloud", exception)
+                        Log.w(
+                            TAG,
+                            "handleAuthResult: Failed to get cloudSpace credentials",
+                            exception
+                        )
                         _uiState.value =
                             LoginUiState.Error(exception.message ?: "Unknown error")
                     }
@@ -106,5 +121,10 @@ class LoginViewModel @Inject constructor(
             Log.d(TAG, "retryAuth: Retrying authentication")
         }
         _uiState.value = LoginUiState.Unauthenticated
+    }
+
+    fun isCseMasterKeyGenerated(): Boolean {
+        cseMasterKeyRepository.getKey() ?: return false
+        return true
     }
 }

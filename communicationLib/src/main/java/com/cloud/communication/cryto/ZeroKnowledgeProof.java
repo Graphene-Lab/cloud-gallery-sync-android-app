@@ -40,13 +40,27 @@ public class ZeroKnowledgeProof {
         return blake2b(concat);
     }
 
+    // overloaded method with timestamp parameter for decryption
+    public byte[] DerivedEncryptionKey(File file, long unixLastWriteTimestamp) throws IOException {
+        // Use provided timestamp instead of file.lastModified()
+        String relativeName = file.getCanonicalPath();
+        byte[] bytes = relativeName.getBytes(StandardCharsets.UTF_8);
+        byte[] len = BitConverter.getBytes(bytes.length);
+        byte[] date = BitConverter.getBytes(unixLastWriteTimestamp);  // Use parameter
+
+        byte[] concat = concatenate(bytes, len, date, this.encryptionMasterKey);
+        return blake2b(concat);
+    }
+
     public void EncryptFile(File inputFile, String outputFile) throws IOException {
         byte[] key = DerivedEncryptionKey(inputFile);
         processFile(inputFile, outputFile, key);
     }
 
+    // Fix DecryptFile to pass the encrypted file's timestamp
     public void DecryptFile(File inputFile, String outputFile) throws IOException {
-        byte[] key = DerivedEncryptionKey(new File(outputFile));
+        long encryptedFileTimestamp = inputFile.lastModified() / 1000;
+        byte[] key = DerivedEncryptionKey(new File(outputFile), encryptedFileTimestamp);
         processFile(inputFile, outputFile, key);
     }
 
@@ -168,7 +182,9 @@ public class ZeroKnowledgeProof {
         StringBuilder result = new StringBuilder(bytes.length);
         for (int i = 0; i < bytes.length; i++) {
             byte b = bytes[i];
-            result.append(Set256Chars.charAt(b ^ masc[i]));
+            // Fix: Ensure the XOR result is treated as unsigned byte (0-255)
+            int index = (b ^ masc[i]) & 0xFF;
+            result.append(Set256Chars.charAt(index));
         }
         return result.toString();
     }
@@ -254,4 +270,74 @@ public class ZeroKnowledgeProof {
             return buffer.getLong();
         }
     }
+
+    // Encrypt bytes in memory (no file system)
+    public byte[] encryptBytes(byte[] inputBytes, String originalFilename, long timestamp) throws IOException {
+        byte[] key = DerivedEncryptionKey(originalFilename, timestamp);
+        return processBytes(inputBytes, key);
+    }
+
+    // Decrypt bytes in memory (no file system)
+    public byte[] decryptBytes(byte[] encryptedBytes, String originalFilename, long timestamp) throws IOException {
+        byte[] key = DerivedEncryptionKey(originalFilename, timestamp);
+        return processBytes(encryptedBytes, key);
+    }
+
+    // New method: derive key from filename only (no File object)
+    public byte[] DerivedEncryptionKey(String filename, long timestamp) throws IOException {
+        byte[] bytes = filename.getBytes(StandardCharsets.UTF_8);
+        byte[] len = BitConverter.getBytes(bytes.length);
+        byte[] date = BitConverter.getBytes(timestamp / 1000);
+
+        byte[] concat = concatenate(bytes, len, date, this.encryptionMasterKey);
+        return blake2b(concat);
+    }
+
+    // Process bytes in memory instead of files
+    private byte[] processBytes(byte[] inputBytes, byte[] key) throws IOException {
+        if (key == null || key.length != 64) {
+            throw new IllegalArgumentException("Key must be 64 bytes.");
+        }
+
+        final int blockSize = 8;
+        final int cyclesPerHash = 8;
+
+        byte[] salt = blake2b(key);
+        byte[] currentKey = blake2b(salt);
+
+        List<Byte> outputList = new ArrayList<>();
+        int cycleCounter = 0;
+
+        for (int i = 0; i < inputBytes.length; i += blockSize) {
+            int remainingBytes = Math.min(blockSize, inputBytes.length - i);
+            byte[] inputBuffer = new byte[blockSize];
+            System.arraycopy(inputBytes, i, inputBuffer, 0, remainingBytes);
+
+            long inputBlock = BitConverter.toUInt64(inputBuffer);
+            long keyBlock = BitConverter.toUInt64(
+                    Arrays.copyOfRange(currentKey, cycleCounter * blockSize, cycleCounter * blockSize + blockSize)
+            );
+
+            long outputBlock = inputBlock ^ keyBlock;
+            byte[] outputBytes = BitConverter.getBytes(outputBlock);
+
+            for (int j = 0; j < remainingBytes; j++) {
+                outputList.add(outputBytes[j]);
+            }
+
+            cycleCounter++;
+            if (cycleCounter >= cyclesPerHash) {
+                currentKey = blake2b(salt, currentKey);
+                cycleCounter = 0;
+            }
+        }
+
+        // Convert List<Byte> to byte[]
+        byte[] result = new byte[outputList.size()];
+        for (int i = 0; i < outputList.size(); i++) {
+            result[i] = outputList.get(i);
+        }
+        return result;
+    }
+
 }

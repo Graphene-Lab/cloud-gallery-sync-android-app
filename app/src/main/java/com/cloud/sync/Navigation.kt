@@ -21,7 +21,8 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = if (BuildConfig.DEBUG) "login" else "scan"
+//        startDestination = if (BuildConfig.DEBUG) "mnemonic" else "login"
+        startDestination = "login"
     ) {
 
         composable("scan") {
@@ -54,12 +55,21 @@ fun AppNavigation() {
         }
 
         composable("login") {
-            LoginScreen(onLoginSuccess = {
+            LoginScreen(onLoginAndCseKeyGenerated = {
                 Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
                 navController.navigate("sync") {
                     popUpTo("login") {
                         inclusive = true
                     }
+                }
+            }, onLoginSuccess = {
+                navController.navigate("mnemonic") {
+                    Log.w(
+                        "auth",
+                        "onLoginAndCseKeyGenerated() called. Navigating to MnemonicScreen..."
+                    )
+
+                    popUpTo("login") {}
                 }
             })
         }

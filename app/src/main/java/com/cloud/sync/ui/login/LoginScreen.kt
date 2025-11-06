@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
@@ -22,6 +23,7 @@ private const val TAG = "LoginScreen"
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onLoginAndCseKeyGenerated: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -29,10 +31,12 @@ fun LoginScreen(
     // Handle navigation when authenticated
     LaunchedEffect(uiState) {
         if (uiState is LoginUiState.Authenticated) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Authentication successful, navigating to main screen")
+            Log.d(TAG, "Authentication successful, navigating to main screen")
+            if (viewModel.isCseMasterKeyGenerated()) {
+                onLoginAndCseKeyGenerated()
+            } else {
+                onLoginSuccess()
             }
-            onLoginSuccess()
         }
     }
 
@@ -62,24 +66,34 @@ fun LoginScreen(
                         Log.d(TAG, "Showing loading state")
                     }
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Authentication in Progress. Please Wait...")
+                        Text(
+                            "Authentication in Progress. Please Wait...",
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
-                
+
                 is LoginUiState.Authenticated -> {
                     if (BuildConfig.DEBUG) {
                         Log.d(TAG, "Showing authenticated state")
                     }
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Successfully authenticated! Connecting...")
+                        Text(
+                            "Successfully authenticated! Connecting...",
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
 
@@ -88,7 +102,8 @@ fun LoginScreen(
                         Log.d(TAG, "Showing unauthenticated state")
                     }
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {

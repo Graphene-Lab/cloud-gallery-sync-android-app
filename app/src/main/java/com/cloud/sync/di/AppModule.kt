@@ -29,11 +29,4 @@ abstract class AppModule {
     abstract fun bindFullScanProcessManager(
         impl: FullScanProcessManager
     ): IFullScanProcessManager
-
-    @Provides
-    @Singleton
-    fun provideZeroKnowledgeProof(cseMasterKeyRepository: ICseMasterKeyRepository): ZeroKnowledgeProof? {
-        val masterKey = cseMasterKeyRepository.getKey()
-        return masterKey?.let { ZeroKnowledgeProof(it) }
-    }
 }

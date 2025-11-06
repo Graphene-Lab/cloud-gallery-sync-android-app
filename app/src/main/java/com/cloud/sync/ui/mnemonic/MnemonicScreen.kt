@@ -49,7 +49,7 @@ fun MnemonicScreen(
     val uiState by mnemonicViewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.isKeySaved) {
-        onMnemonicConfirmed()
+       if(uiState.isKeySaved  ) onMnemonicConfirmed()
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {

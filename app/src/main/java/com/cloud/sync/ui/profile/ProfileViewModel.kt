@@ -3,6 +3,7 @@ package com.cloud.sync.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
+import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val oauthTokenRepository: IOauthTokenRepository,
-    private val cloudSpaceRepository: ICloudSpaceRepository
+    private val cloudSpaceRepository: ICloudSpaceRepository,
+    private val cseMasterKeyRepository: ICseMasterKeyRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -63,5 +65,6 @@ class ProfileViewModel @Inject constructor(
 
     fun logout() {
         oauthTokenRepository.clearTokens()
+        cseMasterKeyRepository.clearKey()
     }
 }

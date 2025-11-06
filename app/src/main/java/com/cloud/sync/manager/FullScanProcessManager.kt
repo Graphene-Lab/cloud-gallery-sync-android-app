@@ -1,7 +1,9 @@
 package com.cloud.sync.manager
 
 import android.content.ContentResolver
+import android.util.Log
 import com.cloud.communication.cryto.FileUploader
+import com.cloud.communication.cryto.ZeroKnowledgeProof
 import com.cloud.sync.BuildConfig
 import com.cloud.sync.common.PhotoSyncStatusManager
 import com.cloud.sync.common.PhotoSyncStatusManager.uploadedPhotosCount
@@ -18,7 +20,10 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.IOException
 import javax.inject.Inject
+import kotlin.collections.forEachIndexed
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -30,10 +35,11 @@ class FullScanProcessManager @Inject constructor(
     private val syncIntervalRepository: ISyncRepository,
     private val galleryRepository: IGalleryRepository,
     private val syncConfig: SyncConfig,
-    private val contentResolver: ContentResolver
+    private val contentResolver: ContentResolver,
+    private val zeroKnowledgeProof: ZeroKnowledgeProof?,
 
 
-) : IFullScanProcessManager {
+    ) : IFullScanProcessManager {
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
         if (BuildConfig.DEBUG) syncIntervalRepository.clearAllData()// TODO: Note - clears synced photos.
@@ -128,41 +134,50 @@ class FullScanProcessManager @Inject constructor(
         var lastSyncedTimestamp = 0L
 
         photos.forEachIndexed { index, photo ->
-            context.ensureActive() // Check for parent coroutine cancellation.
+            context.ensureActive()
 
             try {
-                contentResolver.openInputStream(photo.path)?.use { inputStream ->
-                    // Read all bytes immediately to avoid stream closing issues
-                    val bytes = inputStream.readBytes()
-                    // Create a new ByteArrayInputStream for the FileUploader
-                    java.io.ByteArrayInputStream(bytes).use { byteStream ->
-                        // Use the new method with progress callback
-                        FileUploader.startSendFileWithProgressCallback(
-                            byteStream,
-                            photo.displayName
-                        ) { progress ->
-                            // This callback runs on background thread, switching to Main for UI updates
-                            CoroutineScope(Dispatchers.Main).launch {
-                                val uploadedPhotosCount = uploadedPhotosCount()
-                                if (progress.isCompleted) {
-                                    PhotoSyncStatusManager.markPhotoCompleted(progress.filename)
-                                    SyncStatusManager.updateSuccessfulSyncPhotosCount()
-                                    SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched();
-                                    return@launch
-                                } else {
-                                    PhotoSyncStatusManager.updatePhotoProgress(
-                                        filename = progress.filename,
-                                        currentChunk = progress.currentChunk,
-                                        totalChunks = progress.totalChunks
-                                    )
-                                }
+                // 1. Read original file content directly into memory
+                val originalBytes =
+                    contentResolver.openInputStream(photo.path)?.use { inputStream ->
+                        inputStream.readBytes()
+                    } ?: throw IOException("Failed to read photo") as Throwable
 
+                // 2. Get ZeroKnowledgeProof instance (injected)
+
+                // 3. Generate encrypted filename from display name only
+                val encryptedFilename = zeroKnowledgeProof?.EncryptFullFileName(photo.displayName)
+
+                // 4. Encrypt bytes directly in memory
+                val encryptedBytes = zeroKnowledgeProof?.encryptBytes(
+                    originalBytes,
+                    photo.displayName,  // Use only filename, not path
+                    photo.dateAdded     // Use photo's original timestamp
+                )
+
+                // 5. Upload encrypted bytes with encrypted filename
+                ByteArrayInputStream(encryptedBytes).use { encryptedStream ->
+                    FileUploader.startSendFileWithProgressCallback(
+                        encryptedStream,
+                        encryptedFilename  // Server sees encrypted filename
+                    ) { progress ->
+                        CoroutineScope(Dispatchers.Main).launch {
+                            if (progress.isCompleted) {
+                                PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
+                                SyncStatusManager.updateSuccessfulSyncPhotosCount()
+                                SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
+                            } else {
+                                PhotoSyncStatusManager.updatePhotoProgress(
+                                    filename = photo.displayName, // Show original name in UI
+                                    currentChunk = progress.currentChunk,
+                                    totalChunks = progress.totalChunks
+                                )
                             }
                         }
                     }
                 }
             } catch (e: Exception) {
-                println("Failed to upload ${photo.displayName}: ${e.message}")
+                Log.e("PhotoSync", "Failed to encrypt ${photo.displayName}", e)
             }
 
             lastSyncedTimestamp = photo.dateAdded
