@@ -44,7 +44,7 @@ class FullScanProcessManager @Inject constructor(
 
     ) : IFullScanProcessManager {
 
-    private val concurrentLimit = Semaphore(10) // Allow max N concurrent operations
+    private val concurrentLimit = Semaphore(2) // Allow max N concurrent operations
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
         if (BuildConfig.DEBUG) syncIntervalRepository.clearAllData()// TODO: Note - clears synced photos.
@@ -76,12 +76,12 @@ class FullScanProcessManager @Inject constructor(
                 updatedListForSave[0] = tempInterval1
                 syncIntervalRepository.saveSyncedIntervals(updatedListForSave)
             }
+            SyncStatusManager.increaseDiscoveredPhotosCount(photosInGap.size)
             syncAndSaveInBatches(
                 currentCoroutineContext,
                 photosInGap,
                 onBatchSave
             )
-            SyncStatusManager.increaseDiscoveredPhotosCount(photosInGap.size)
         }
 
         val mergedInterval = mergeTwoIntervals(tempInterval1, interval2)
@@ -111,12 +111,13 @@ class FullScanProcessManager @Inject constructor(
                 currentIntervals[0] = updatedInterval
                 syncIntervalRepository.saveSyncedIntervals(currentIntervals)
             }
+            SyncStatusManager.increaseDiscoveredPhotosCount(photosInTail.size)
+
             syncAndSaveInBatches(
                 currentCoroutineContext,
                 photosInTail,
                 onBatchSave
             )
-            SyncStatusManager.increaseDiscoveredPhotosCount(photosInTail.size)
         }
         return currentIntervals
     }
