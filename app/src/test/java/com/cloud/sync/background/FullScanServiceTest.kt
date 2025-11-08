@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.content.Intent
 import com.cloud.sync.common.SyncStatusManager
-import com.cloud.sync.domain.model.SyncProgress
 import com.cloud.sync.domain.model.TimeInterval
 import com.cloud.sync.manager.interfaces.IFullScanProcessManager
 import io.mockk.every
@@ -54,9 +53,11 @@ class FullScanServiceTest {
     // Testing scope that uses the [testDispatcher] and provides structured concurrency for tests.
     private val testScope = TestScope(testDispatcher)
 
-
-    // helper StateFlow to simulate the progress updates from the real SyncStatusManager.
-    private val progressFlow = MutableStateFlow(SyncProgress(isSyncing = false, text = "Initial"))
+    // helper StateFlows to simulate the updates from the real SyncStatusManager.
+    private val isSyncingFlow = MutableStateFlow(false)
+    private val successfulSyncPhotosCountFlow = MutableStateFlow(0)
+    private val failedSyncPhotosCountFlow = MutableStateFlow(0)
+    private val discoveredPhotosCountFlow = MutableStateFlow(0)
 
     @BeforeEach
     fun setup() {
@@ -67,12 +68,25 @@ class FullScanServiceTest {
         // --- Mock Singleton/Object Dependencies ---
         // Using MockK to mock the 'SyncStatusManager' object, as Mockito cannot mock Kotlin objects.
         mockkObject(SyncStatusManager)
-        every { SyncStatusManager.isSyncing() } returns false
-        every { SyncStatusManager.progress } returns progressFlow
-        // Stub the update function to feed our local progressFlow, simulating the real object's behavior.
-        every { SyncStatusManager.update(any(), any()) } answers {
-            progressFlow.value = SyncProgress(isSyncing = firstArg(), text = secondArg())
+        every { SyncStatusManager.isSyncing } returns isSyncingFlow
+        every { SyncStatusManager.successfulSyncPhotosCount } returns successfulSyncPhotosCountFlow
+        every { SyncStatusManager.failedSyncPhotosCount } returns failedSyncPhotosCountFlow
+        every { SyncStatusManager.discoveredPhotosCount } returns discoveredPhotosCountFlow
+        
+        // Mock the update methods
+        every { SyncStatusManager.updateSyncStatus(any()) } answers {
+            isSyncingFlow.value = firstArg()
         }
+        every { SyncStatusManager.updateSuccessfulSyncPhotosCount() } answers {
+            successfulSyncPhotosCountFlow.value += 1
+        }
+        every { SyncStatusManager.updateFailedSyncPhotosCount(any()) } answers {
+            failedSyncPhotosCountFlow.value += firstArg<Int>()
+        }
+        every { SyncStatusManager.increaseDiscoveredPhotosCount(any()) } answers {
+            discoveredPhotosCountFlow.value += firstArg<Int>()
+        }
+
 
         // --- Prepare the Service Under Test ---
         // Using spy() to create an instance of the real service that we can partially mock.
@@ -130,7 +144,7 @@ class FullScanServiceTest {
             // Arrange
             val startIntent: Intent = mock()
             whenever(startIntent.action).thenReturn(FullScanService.ACTION_START)
-            every { SyncStatusManager.isSyncing() } returns true // Key condition for this test
+            isSyncingFlow.value = true // Key condition for this test
 
             // Act
             service.onStartCommand(startIntent, 0, 1)
@@ -173,7 +187,7 @@ class FullScanServiceTest {
             // We verify the public effects of the private stopSync() method.
             verify(service).stopSelf()
             verify(service).stopForeground(any<Int>())
-            io.mockk.verify { SyncStatusManager.update(false, "Full scan stopped.") }
+            io.mockk.verify { SyncStatusManager.updateSyncStatus(false) }
         }
     }
 
@@ -224,8 +238,8 @@ class FullScanServiceTest {
             advanceUntilIdle()
 
             // Assert
-            io.mockk.verify { SyncStatusManager.update(true, "Preparing full scan...") }
-            io.mockk.verify { SyncStatusManager.update(false, "Error: ${exception.message}") }
+            io.mockk.verify { SyncStatusManager.updateSyncStatus(true) }
+            io.mockk.verify { SyncStatusManager.updateSyncStatus(false) }
             verify(service).stopSelf()
         }
     }
@@ -247,8 +261,7 @@ class FullScanServiceTest {
             service.onStartCommand(startIntent, 0, 1)
             advanceUntilIdle() // Ensure the collector coroutine is running.
             // Simulate a status update.
-            val newStatusText = "Syncing 50/100"
-            SyncStatusManager.update(true, newStatusText)
+            successfulSyncPhotosCountFlow.value = 50
             advanceUntilIdle() // Allow the collector to process the update.
 
             // Assert

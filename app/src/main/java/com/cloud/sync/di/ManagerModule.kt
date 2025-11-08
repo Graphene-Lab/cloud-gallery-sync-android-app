@@ -1,13 +1,11 @@
 package com.cloud.sync.di
 
-import com.cloud.sync.manager.DataCenterCloudManager
 import com.cloud.sync.manager.interfaces.IOAuthManager
 import com.cloud.sync.manager.interfaces.IPermissionsManager
 import com.cloud.sync.manager.interfaces.IQRScanner
 import com.cloud.sync.manager.OAuthManager
 import com.cloud.sync.manager.PermissionsManager
 import com.cloud.sync.manager.QRScanner
-import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -37,10 +35,4 @@ abstract class ManagerModule {
     abstract fun bindAuthManager(
         impl: OAuthManager
     ): IOAuthManager
-
-    @Binds
-    @ViewModelScoped
-    abstract fun bindDataCenterCloudManager(
-        impl: DataCenterCloudManager
-    ) : ICloudManager
 }

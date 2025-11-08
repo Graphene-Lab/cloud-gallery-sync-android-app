@@ -17,19 +17,19 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 
-public class ZeroKnowledgeProof {
+public class ZeroKnowledgeProof implements IZeroKnowledgeProof {
 
     private final byte[] encryptionMasterKey;
     private final byte[] filenameObfuscationKey;
 
-        public ZeroKnowledgeProof(byte[] encryptionMasterKey) {
+    public ZeroKnowledgeProof(byte[] encryptionMasterKey) {
         this.filenameObfuscationKey = hash256(encryptionMasterKey); // 32 bytes
         this.encryptionMasterKey = blake2b(
                 concatenate(encryptionMasterKey, this.filenameObfuscationKey)
         ); // 64 bytes
     }
 
-    public byte[] DerivedEncryptionKey(File file) throws IOException {
+    private byte[] DerivedEncryptionKey(File file) throws IOException {
         long unixLastWriteTimestamp = file.lastModified() / 1000;
         String relativeName = file.getCanonicalPath();
         byte[] bytes = relativeName.getBytes(StandardCharsets.UTF_8);
@@ -41,7 +41,7 @@ public class ZeroKnowledgeProof {
     }
 
     // overloaded method with timestamp parameter for decryption
-    public byte[] DerivedEncryptionKey(File file, long unixLastWriteTimestamp) throws IOException {
+    private byte[] DerivedEncryptionKey(File file, long unixLastWriteTimestamp) throws IOException {
         // Use provided timestamp instead of file.lastModified()
         String relativeName = file.getCanonicalPath();
         byte[] bytes = relativeName.getBytes(StandardCharsets.UTF_8);
@@ -52,12 +52,14 @@ public class ZeroKnowledgeProof {
         return blake2b(concat);
     }
 
+    @Override
     public void EncryptFile(File inputFile, String outputFile) throws IOException {
         byte[] key = DerivedEncryptionKey(inputFile);
         processFile(inputFile, outputFile, key);
     }
 
     // Fix DecryptFile to pass the encrypted file's timestamp
+    @Override
     public void DecryptFile(File inputFile, String outputFile) throws IOException {
         long encryptedFileTimestamp = inputFile.lastModified() / 1000;
         byte[] key = DerivedEncryptionKey(new File(outputFile), encryptedFileTimestamp);
@@ -109,10 +111,12 @@ public class ZeroKnowledgeProof {
         }
     }
 
+    @Override
     public String EncryptFullFileName(String fullFileName) {
         return processFullFileName(fullFileName, this.filenameObfuscationKey, true);
     }
 
+    @Override
     public String DecryptFullFileName(String fullFileName) {
         return processFullFileName(fullFileName, this.filenameObfuscationKey, false);
     }
@@ -172,7 +176,7 @@ public class ZeroKnowledgeProof {
 
     private String PerformEncryptText(String text, byte[] key) {
         byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
-        byte[] masterKey = concatenate(key, new byte[] { (byte) bytes.length });
+        byte[] masterKey = concatenate(key, new byte[]{(byte) bytes.length});
         byte[] masc = new byte[0];
         do {
             masterKey = blake2b(masterKey);
@@ -198,7 +202,7 @@ public class ZeroKnowledgeProof {
         }
 
         byte[] bytes = new byte[text.length()];
-        byte[] masterKey = concatenate(key, new byte[] { (byte) bytes.length });
+        byte[] masterKey = concatenate(key, new byte[]{(byte) bytes.length});
         byte[] masc = new byte[0];
         do {
             masterKey = blake2b(masterKey);
@@ -247,44 +251,22 @@ public class ZeroKnowledgeProof {
         }
         return result;
     }
-
-    private static class BitConverter {
-
-        public static byte[] getBytes(long value) {
-            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putLong(value);
-            return buffer.array();
-        }
-
-        public static byte[] getBytes(int value) {
-            ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putInt(value);
-            return buffer.array();
-        }
-
-        public static long toUInt64(byte[] bytes) {
-            ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            return buffer.getLong();
-        }
-    }
-
     // Encrypt bytes in memory (no file system)
+    @Override
     public byte[] encryptBytes(byte[] inputBytes, String originalFilename, long timestamp) throws IOException {
         byte[] key = DerivedEncryptionKey(originalFilename, timestamp);
         return processBytes(inputBytes, key);
     }
 
     // Decrypt bytes in memory (no file system)
+    @Override
     public byte[] decryptBytes(byte[] encryptedBytes, String originalFilename, long timestamp) throws IOException {
         byte[] key = DerivedEncryptionKey(originalFilename, timestamp);
         return processBytes(encryptedBytes, key);
     }
 
     // New method: derive key from filename only (no File object)
-    public byte[] DerivedEncryptionKey(String filename, long timestamp) throws IOException {
+    private byte[] DerivedEncryptionKey(String filename, long timestamp) throws IOException {
         byte[] bytes = filename.getBytes(StandardCharsets.UTF_8);
         byte[] len = BitConverter.getBytes(bytes.length);
         byte[] date = BitConverter.getBytes(timestamp / 1000);
@@ -340,4 +322,26 @@ public class ZeroKnowledgeProof {
         return result;
     }
 
+    private static class BitConverter {
+
+        public static byte[] getBytes(long value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putLong(value);
+            return buffer.array();
+        }
+
+        public static byte[] getBytes(int value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            buffer.putInt(value);
+            return buffer.array();
+        }
+
+        public static long toUInt64(byte[] bytes) {
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            return buffer.getLong();
+        }
+    }
 }

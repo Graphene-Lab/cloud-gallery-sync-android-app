@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
 import java.io.IOException
+import android.net.Uri
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @DisplayName("PhotoSyncWorker Unit Tests")
@@ -133,10 +134,10 @@ class PhotoSyncWorkerTest {
             whenever(syncRepository.syncedIntervals).thenReturn(MutableStateFlow(initialIntervals))
 
             val newPhotos = listOf(
-                GalleryPhoto(id = 1, dateAdded = 2001, displayName = "a.jpg"),
-                GalleryPhoto(id = 2, dateAdded = 2002, displayName = "b.jpg"),
-                GalleryPhoto(id = 3, dateAdded = 2003, displayName = "c.jpg"),
-                GalleryPhoto(id = 4, dateAdded = 2004, displayName = "d.jpg")
+                GalleryPhoto(id = 1, dateAdded = 2001, displayName = "a.jpg", path = mock<Uri>()),
+                GalleryPhoto(id = 2, dateAdded = 2002, displayName = "b.jpg", path = mock<Uri>()),
+                GalleryPhoto(id = 3, dateAdded = 2003, displayName = "c.jpg", path = mock<Uri>()),
+                GalleryPhoto(id = 4, dateAdded = 2004, displayName = "d.jpg", path = mock<Uri>())
             )
             whenever(galleryRepository.getPhotos(startTimeSeconds = anchorInterval.end + 1)).thenReturn(newPhotos)
 

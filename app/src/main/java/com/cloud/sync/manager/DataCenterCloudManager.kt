@@ -3,7 +3,7 @@ package com.cloud.sync.manager
 import com.cloud.communication.cryto.FileUploader
 import com.cloud.communication.cryto.QrCodeHandler
 import com.cloud.sync.manager.interfaces.ICloudManager
-import java.io.File
+import java.io.InputStream
 import javax.inject.Inject
 
 class DataCenterCloudManager @Inject constructor() : ICloudManager {
@@ -16,12 +16,11 @@ class DataCenterCloudManager @Inject constructor() : ICloudManager {
         }
     }
 
-    override suspend fun uploadFile(file: File): Result<Unit> {
-        return try {
-            FileUploader.startSendFileAsync(file)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override fun uploadFile(
+        inputStream: InputStream,
+        fileName: String,
+        onProgressUpdate: (FileUploader.ChunkProgress) -> Unit
+    ) {
+        FileUploader.startSendFileWithProgressCallback(inputStream, fileName, onProgressUpdate)
     }
 }

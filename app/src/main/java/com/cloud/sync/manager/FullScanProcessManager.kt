@@ -2,17 +2,15 @@ package com.cloud.sync.manager
 
 import android.content.ContentResolver
 import android.util.Log
-import com.cloud.communication.cryto.FileUploader
-import com.cloud.communication.cryto.ZeroKnowledgeProof
-import com.cloud.sync.BuildConfig
+import com.cloud.communication.cryto.IZeroKnowledgeProof
 import com.cloud.sync.common.PhotoSyncStatusManager
-import com.cloud.sync.common.PhotoSyncStatusManager.uploadedPhotosCount
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
 import com.cloud.sync.domain.model.TimeInterval
 import com.cloud.sync.domain.repositroy.IGalleryRepository
 import com.cloud.sync.domain.repositroy.ISyncRepository
+import com.cloud.sync.manager.interfaces.ICloudManager
 import com.cloud.sync.manager.interfaces.IFullScanProcessManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,15 +37,14 @@ class FullScanProcessManager @Inject constructor(
     private val galleryRepository: IGalleryRepository,
     private val syncConfig: SyncConfig,
     private val contentResolver: ContentResolver,
-    private val zeroKnowledgeProof: ZeroKnowledgeProof?,
-
+    private val zeroKnowledgeProof: IZeroKnowledgeProof,
+    private val dataCenterCloudManager: ICloudManager
 
     ) : IFullScanProcessManager {
 
     private val concurrentLimit = Semaphore(2) // Allow max N concurrent operations
 
     override suspend fun initializeIntervals(): MutableList<TimeInterval> {
-        if (BuildConfig.DEBUG) syncIntervalRepository.clearAllData()// TODO: Note - clears synced photos.
         val allIntervals = syncIntervalRepository.syncedIntervals.first().toMutableList()
         // Ensure the initial 0-timestamp interval exists for complete coverage.
         if (allIntervals.none { it.start == 0L }) {
@@ -153,10 +150,10 @@ class FullScanProcessManager @Inject constructor(
                             } ?: throw IOException("Failed to read photo")
 
                         // 2. Generate encrypted filename from display name only
-                        val encryptedFilename = zeroKnowledgeProof?.EncryptFullFileName(photo.displayName)
+                        val encryptedFilename = zeroKnowledgeProof.EncryptFullFileName(photo.displayName)
 
                         // 3. Encrypt bytes directly in memory
-                        val encryptedBytes = zeroKnowledgeProof?.encryptBytes(
+                        val encryptedBytes = zeroKnowledgeProof.encryptBytes(
                             originalBytes,
                             photo.displayName,  // Use only filename, not path
                             photo.dateAdded     // Use photo's original timestamp
@@ -164,7 +161,7 @@ class FullScanProcessManager @Inject constructor(
 
                         // 4. Upload encrypted bytes with encrypted filename
                         ByteArrayInputStream(encryptedBytes).use { encryptedStream ->
-                            FileUploader.startSendFileWithProgressCallback(
+                            dataCenterCloudManager.uploadFile(
                                 encryptedStream,
                                 encryptedFilename  // Server sees encrypted filename
                             ) { progress ->

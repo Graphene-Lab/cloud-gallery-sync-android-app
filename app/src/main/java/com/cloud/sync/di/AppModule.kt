@@ -1,15 +1,14 @@
 package com.cloud.sync.di
 
-import com.cloud.communication.cryto.ZeroKnowledgeProof
-import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.manager.BackgroundSyncManager
+import com.cloud.sync.manager.DataCenterCloudManager
 import com.cloud.sync.manager.FullScanProcessManager
 import com.cloud.sync.manager.interfaces.IBackgroundSyncManager
+import com.cloud.sync.manager.interfaces.ICloudManager
 import com.cloud.sync.manager.interfaces.IFullScanProcessManager
 
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -29,4 +28,10 @@ abstract class AppModule {
     abstract fun bindFullScanProcessManager(
         impl: FullScanProcessManager
     ): IFullScanProcessManager
+
+    @Binds
+    @Singleton
+    abstract fun bindDataCenterCloudManager(
+        impl: DataCenterCloudManager
+    ): ICloudManager
 }
