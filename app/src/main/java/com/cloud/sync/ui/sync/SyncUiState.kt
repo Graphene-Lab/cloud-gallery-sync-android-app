@@ -11,4 +11,7 @@ data class SyncUiState(
     val totalPhotosToBeUploaded: Int = 0,
     val failedPhotos: Int = 0,
     val progress: PhotoSyncStatusManager.PhotoProgress? = null,
+    val permissionDenied: Boolean = false,
+    val startFullScanButtonClicked: Boolean = false,
+    val syncFromNowButtonClicked: Boolean = false,
 )

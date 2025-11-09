@@ -1,14 +1,20 @@
 package com.cloud.sync.ui.sync
 
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -19,8 +25,23 @@ fun SyncScreen(
     syncViewModel: SyncViewModel = hiltViewModel(),
     onNavigateToProfile: () -> Unit
 ) {
-    val uiState by syncViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
+    val uiState by syncViewModel.uiState.collectAsState()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+
+        Log.d("SyncScreen", "Permission result: $permissions")
+        syncViewModel.handlePermissionResult(permissions)
+
+
+    }
+
+    // One-time launcher setup
+    LaunchedEffect(Unit) {
+        syncViewModel.setPermissionLauncher(permissionLauncher)
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -146,7 +167,11 @@ fun SyncScreen(
 
                 val isFullScanning = uiState.isFullScanInProgress
                 Button(
-                    onClick = { if (isFullScanning) syncViewModel.stopFullScan() else syncViewModel.startFullScan() },
+                    onClick = {
+                        if (isFullScanning) syncViewModel.stopFullScan() else syncViewModel.onStartFullScanButtonClicked(
+                            context
+                        )
+                    },
                     enabled = true,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isFullScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -166,6 +191,17 @@ fun SyncScreen(
                     } else {
                         Text("Start Full Scan")
                     }
+
+                }
+
+                if(uiState.permissionDenied) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+                    Text(
+                        text = " You denied granting permissions. Please go to settings to grant them.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 4.dp),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
         }

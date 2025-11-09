@@ -44,6 +44,7 @@ sealed class PermissionSet(val permissions: Set<String>) {
     companion object {
         // Common permission sets
         val CAMERA = setOf(Manifest.permission.CAMERA)
+        
         val STORAGE = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             setOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
@@ -52,11 +53,26 @@ sealed class PermissionSet(val permissions: Set<String>) {
         } else {
             setOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
+        
+        // Notification permission for Android 13+ (API 33+)
+        val NOTIFICATION = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setOf(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            emptySet() // No runtime permission needed for older versions
+        }
+        
+        // Combined essential permissions for sync functionality
+        val SYNC_ESSENTIALS = buildSet {
+            addAll(STORAGE)
+            addAll(NOTIFICATION)
+        }
     }
 
-    // specific permission sets
+    // Specific permission sets
     object Camera : PermissionSet(CAMERA)
     object Storage : PermissionSet(STORAGE)
+    object Notification : PermissionSet(NOTIFICATION)
+    object SyncEssentials : PermissionSet(SYNC_ESSENTIALS)
 
     // Custom permission set constructor
     class Custom(permissions: Set<String>) : PermissionSet(permissions)
