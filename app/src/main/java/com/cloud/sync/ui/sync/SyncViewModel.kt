@@ -77,6 +77,15 @@ class SyncViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            SyncStatusManager.noPhotosFoundToSync.collect { noPhotosDiscoveredForSync ->
+                _uiState.update {
+                    it.copy(
+                        noPhotosToSync = noPhotosDiscoveredForSync
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
             PhotoSyncStatusManager.currentPhotoProgress.collect { progress ->
                 _uiState.update {
                     it.copy(
@@ -130,7 +139,15 @@ class SyncViewModel @Inject constructor(
     }
 
     fun handlePermissionResult(permissions: Map<String, Boolean>) {
-        Log.d("SyncViewModel", "handlePermissionResult: ${permissions.getOrDefault(Manifest.permission.READ_EXTERNAL_STORAGE, false)}")
+        Log.d(
+            "SyncViewModel",
+            "handlePermissionResult: ${
+                permissions.getOrDefault(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    false
+                )
+            }"
+        )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (permissions.getOrDefault(
                     Manifest.permission.POST_NOTIFICATIONS, false
@@ -170,8 +187,7 @@ class SyncViewModel @Inject constructor(
 
                     onFromNowSyncToggled(true)
                 }
-            }
-            else{
+            } else {
                 _uiState.update {
                     it.copy(
                         permissionDenied = true,

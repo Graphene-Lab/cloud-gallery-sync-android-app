@@ -121,6 +121,11 @@ class FullScanService : Service() {
             coroutineContext.ensureActive() // Ensure active before processing tail.
             // Process any remaining photos at the end of the timeline.
             fullScanProcessor.processTailEnd(allIntervals, coroutineContext)
+            if (SyncStatusManager.discoveredPhotosCount.value == 0) {
+                SyncStatusManager.updateNoPhotosFoundToSync(true)
+                SyncStatusManager.updateSyncStatus(false)
+                return
+            }
 
         } catch (e: Exception) {
             // Re-throw CancellationException to propagate cancellation correctly.

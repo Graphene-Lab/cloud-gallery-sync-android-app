@@ -14,4 +14,5 @@ data class SyncUiState(
     val permissionDenied: Boolean = false,
     val startFullScanButtonClicked: Boolean = false,
     val syncFromNowButtonClicked: Boolean = false,
+    val noPhotosToSync: Boolean = false
 )

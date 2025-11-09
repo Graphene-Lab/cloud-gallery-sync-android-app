@@ -21,10 +21,17 @@ object SyncStatusManager {
     private var _discoveredPhotosCount: MutableStateFlow<Int> = MutableStateFlow(0)
     val discoveredPhotosCount: StateFlow<Int> = _discoveredPhotosCount
 
+    private var _noPhotosFoundToSync: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val noPhotosFoundToSync: StateFlow<Boolean> = _noPhotosFoundToSync
+
     private var _totalProcessedPhotosCount: Int = 0
 
     fun updateSyncStatus(isSyncing: Boolean) {
         _isSyncing.value = isSyncing
+    }
+
+    fun updateNoPhotosFoundToSync(noPhotosFoundToSync: Boolean) {
+        _noPhotosFoundToSync.value = noPhotosFoundToSync
     }
 
     fun turnOfSyncStatusBasedOnIfAllPhotosFetched() {

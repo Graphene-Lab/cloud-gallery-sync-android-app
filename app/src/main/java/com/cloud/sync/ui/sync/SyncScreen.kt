@@ -77,11 +77,20 @@ fun SyncScreen(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             } else {
-                                Text(
-                                    text = "Ready to Sync",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
+                                if (uiState.noPhotosToSync) {
+                                    Text(
+                                        text = "No photos to sync. Everything is up to date.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Ready to Sync",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+
                             }
 
                         } else {
@@ -194,7 +203,7 @@ fun SyncScreen(
 
                 }
 
-                if(uiState.permissionDenied) {
+                if (uiState.permissionDenied) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
                     Text(
                         text = " You denied granting permissions. Please go to settings to grant them.",
