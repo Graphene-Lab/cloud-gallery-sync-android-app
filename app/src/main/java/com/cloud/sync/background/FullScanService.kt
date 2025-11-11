@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.cloud.communication.cryto.RequestManager
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.manager.interfaces.IFullScanProcessManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -91,6 +92,7 @@ class FullScanService : Service() {
      * Stops the full scan, cancels ongoing coroutines, and removes the foreground notification.
      */
     private fun stopSync() {
+        RequestManager.cancelAllPendingRequests()
         serviceScope.coroutineContext.cancelChildren()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()

@@ -177,7 +177,7 @@ fun SyncScreen(
                 val isFullScanning = uiState.isFullScanInProgress
                 Button(
                     onClick = {
-                        if (isFullScanning) syncViewModel.stopFullScan() else syncViewModel.onStartFullScanButtonClicked(
+                        if (isFullScanning) syncViewModel.onStopFullScanButtonClicked() else syncViewModel.onStartFullScanButtonClicked(
                             context
                         )
                     },

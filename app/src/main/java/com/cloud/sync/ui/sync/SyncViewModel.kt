@@ -117,6 +117,16 @@ class SyncViewModel @Inject constructor(
         }
     }
 
+    fun onStopFullScanButtonClicked() {
+        _uiState.update {
+            it.copy(
+                isFullScanInProgress = false
+            )
+        }
+        SyncStatusManager.updateSyncStatus(false)
+        stopFullScan()
+    }
+
     private fun requestSyncPermissions() {
         permissionsManager.requestPermissions(PermissionSet.SyncEssentials)
     }

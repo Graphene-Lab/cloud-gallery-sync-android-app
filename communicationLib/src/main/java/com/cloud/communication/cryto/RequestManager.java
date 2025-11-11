@@ -11,6 +11,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,9 +36,8 @@ public class RequestManager {
     private static final AtomicInteger concurrentRequest = new AtomicInteger(0);
     private static final int maxConcurrentRequest = 5;
     private static final OkHttpClient client = new OkHttpClient();
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
-
-//    public static String proxy = "http://195.20.235.5:5050";
+    private static ExecutorService executor = Executors.newCachedThreadPool();
+    private static final Set<Call> activeCalls = ConcurrentHashMap.newKeySet();//    public static String proxy = "http://195.20.235.5:5050";
 
     public static String proxy = "http://proxy.tc0.it:5050";
 
@@ -54,6 +54,8 @@ public class RequestManager {
     }
 
     private static synchronized void tryStartNext() {
+        recreateExecutor();
+
         if (concurrentRequest.get() < maxConcurrentRequest) {
             Pair<Integer, byte[]> nextRequest = null;
             if (!spooler.isEmpty()) {
@@ -145,16 +147,20 @@ public class RequestManager {
     }
 
     private static void getEnqueue(Request request) {
-        client.newCall(request).enqueue(new Callback() {
+        var call = client.newCall(request);
+        activeCalls.add(call);
+        call.enqueue(new Callback() {
 
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                activeCalls.remove(call);
                 alertBox("HTTP Request error: " + e.getMessage());
                 requestDone();
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) {
+                activeCalls.remove(call);
                 requestDone();
                 int code = response.code();
                 switch (code) {
@@ -300,4 +306,55 @@ public class RequestManager {
             }
         }
     }
+
+
+    public static synchronized void cancelAllPendingRequests() {
+        // Clear all pending requests from the spooler
+        spooler.clear();
+
+        // Interrupt running requests by shutting down and recreating the executor
+        try {
+            // Attempt graceful shutdown first
+            executor.shutdown();
+
+            // Wait up to 2 seconds for current tasks to complete
+            if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                // Force shutdown if tasks don't complete gracefully
+                List<Runnable> remainingTasks = executor.shutdownNow();
+                System.out.println("Forcibly cancelled " + remainingTasks.size() + " pending upload tasks");
+
+                // Wait a bit more for tasks to respond to interruption
+                if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                    System.err.println("Some upload tasks did not terminate gracefully");
+                }
+            }
+
+            // Reset concurrent request counter since we're stopping everything
+            concurrentRequest.set(0);
+
+            System.out.println("All upload requests cancelled successfully");
+
+        } catch (InterruptedException e) {
+            // Current thread was interrupted, re-interrupt and force shutdown
+            Thread.currentThread().interrupt();
+            executor.shutdownNow();
+            concurrentRequest.set(0);
+            System.err.println("Cancellation was interrupted, forced shutdown");
+        }
+
+        for (Call call : activeCalls) {
+            if (!call.isCanceled()) {
+                call.cancel();
+            }
+        }
+        activeCalls.clear();
+    }
+
+    private static synchronized void recreateExecutor() {
+        if (executor.isShutdown()) {
+            executor = Executors.newCachedThreadPool();
+        }
+    }
+
+
 }
