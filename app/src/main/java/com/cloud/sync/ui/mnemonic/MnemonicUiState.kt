@@ -7,7 +7,8 @@ data class MnemonicUiState(
     val mode: MnemonicMode = MnemonicMode.CHOOSE_ACTION,
     val errorMessage: String? = null,
     val recoveryMnemonic: String = "",
-    val isRecovering: Boolean = false
+    val isRecovering: Boolean = false,
+    val isEncryptionEnabled: Boolean = true
 )
 
 enum class MnemonicMode {

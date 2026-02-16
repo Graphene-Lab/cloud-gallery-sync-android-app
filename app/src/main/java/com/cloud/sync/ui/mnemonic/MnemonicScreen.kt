@@ -61,7 +61,11 @@ fun MnemonicScreen(
                     MnemonicMode.CHOOSE_ACTION -> {
                         ChooseActionView(
                             onGenerateNew = { mnemonicViewModel.selectGenerateNew() },
-                            onRecover = { mnemonicViewModel.selectRecover() }
+                            onRecover = { mnemonicViewModel.selectRecover() },
+                            onSkip = {
+                                mnemonicViewModel.setEncryptionEnabled(false)
+                                onMnemonicConfirmed()
+                            }
                         )
                     }
                     MnemonicMode.GENERATE_NEW -> {
@@ -97,11 +101,20 @@ fun MnemonicScreen(
 @Composable
 private fun ChooseActionView(
     onGenerateNew: () -> Unit,
-    onRecover: () -> Unit
+    onRecover: () -> Unit,
+    onSkip: () -> Unit
 ) {
     Text(
         "Secure Your Account",
         style = MaterialTheme.typography.headlineMedium
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+        "Set up client-side encryption to protect your data",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
     )
     Spacer(modifier = Modifier.height(32.dp))
 
@@ -120,9 +133,20 @@ private fun ChooseActionView(
         OutlinedButton(
             onClick = onRecover,
             modifier = Modifier.fillMaxWidth(0.8f)
-
         ) {
             Text("Recover from Existing one")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(
+            onClick = onSkip,
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text(
+                "Skip (Not Recommended)",
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }

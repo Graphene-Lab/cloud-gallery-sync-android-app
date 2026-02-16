@@ -1,5 +1,7 @@
 package com.cloud.sync.ui.mnemonic
 
+import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import cash.z.ecc.android.bip39.Mnemonics
 import cash.z.ecc.android.bip39.toSeed
@@ -15,10 +17,21 @@ import javax.inject.Inject
 @HiltViewModel
 class MnemonicViewModel @Inject constructor(
     private val keyRepository: ICseMasterKeyRepository,
+    private val sharedPreferences: SharedPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MnemonicUiState())
     val uiState: StateFlow<MnemonicUiState> = _uiState.asStateFlow()
+
+    companion object {
+        private const val KEY_ENCRYPTION_ENABLED = "is_encryption_enabled"
+    }
+
+    init {
+        // Load encryption preference from SharedPreferences
+        val savedEncryptionPreference = sharedPreferences.getBoolean(KEY_ENCRYPTION_ENABLED, true)
+        _uiState.update { it.copy(isEncryptionEnabled = savedEncryptionPreference) }
+    }
 
     fun selectGenerateNew() {
         _uiState.update { it.copy(mode = MnemonicMode.GENERATE_NEW) }
@@ -31,6 +44,13 @@ class MnemonicViewModel @Inject constructor(
                 errorMessage = null,
                 recoveryMnemonic = ""
             ) 
+        }
+    }
+
+    fun setEncryptionEnabled(enabled: Boolean) {
+        _uiState.update { it.copy(isEncryptionEnabled = enabled) }
+        sharedPreferences.edit {
+            putBoolean(KEY_ENCRYPTION_ENABLED, enabled)
         }
     }
 

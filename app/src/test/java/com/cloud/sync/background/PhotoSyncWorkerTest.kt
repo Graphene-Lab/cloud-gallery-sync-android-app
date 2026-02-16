@@ -1,13 +1,16 @@
 package com.cloud.sync.background
 
 import android.content.Context
+import android.content.ContentResolver
 import androidx.work.ListenableWorker.Result
 import androidx.work.WorkerParameters
+import com.cloud.communication.cryto.IZeroKnowledgeProof
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
 import com.cloud.sync.domain.model.TimeInterval
 import com.cloud.sync.domain.repositroy.IGalleryRepository
 import com.cloud.sync.domain.repositroy.ISyncRepository
+import com.cloud.sync.manager.interfaces.ICloudManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
 import java.io.IOException
+import java.io.ByteArrayInputStream
 import android.net.Uri
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -32,6 +36,12 @@ class PhotoSyncWorkerTest {
     private lateinit var galleryRepository: IGalleryRepository
     /** Mock for application-wide synchronization settings. */
     private lateinit var syncConfig: SyncConfig
+    /** Mock for accessing file content from the device. */
+    private lateinit var contentResolver: ContentResolver
+    /** Mock for zero-knowledge proof encryption. */
+    private lateinit var zeroKnowledgeProof: IZeroKnowledgeProof
+    /** Mock for uploading files to the cloud. */
+    private lateinit var dataCenterCloudManager: ICloudManager
     /** Mocks for the Android framework dependencies required by the Worker's constructor. */
     private lateinit var context: Context
     private lateinit var workerParameters: WorkerParameters
@@ -46,12 +56,19 @@ class PhotoSyncWorkerTest {
         syncRepository = mock()
         galleryRepository = mock()
         syncConfig = mock()
+        contentResolver = mock()
+        zeroKnowledgeProof = mock()
+        dataCenterCloudManager = mock()
         context = mock()
         workerParameters = mock()
 
         // --- Set Up Common Mock Behavior ---
         // Define a consistent batch size for all tests to use.
         whenever(syncConfig.batchSize).thenReturn(3)
+        // Set photoFolderPath to default value
+        whenever(syncConfig.photoFolderPath).thenReturn("Photos/")
+        // Set encryption disabled by default for tests
+        whenever(syncConfig.isEncryptionEnabled).thenReturn(false)
 
         // --- Instantiate the Worker ---
         // We create the worker directly, injecting our mocks. This allows us to test its logic
@@ -61,7 +78,10 @@ class PhotoSyncWorkerTest {
             workerParameters,
             syncRepository,
             galleryRepository,
-            syncConfig
+            syncConfig,
+            contentResolver,
+            zeroKnowledgeProof,
+            dataCenterCloudManager
         )
     }
 
@@ -140,6 +160,27 @@ class PhotoSyncWorkerTest {
                 GalleryPhoto(id = 4, dateAdded = 2004, displayName = "d.jpg", path = mock<Uri>())
             )
             whenever(galleryRepository.getPhotos(startTimeSeconds = anchorInterval.end + 1)).thenReturn(newPhotos)
+
+            // Mock ContentResolver to return input streams for file reads
+            // Use doAnswer to create a fresh ByteArrayInputStream for each call
+            doAnswer { invocation ->
+                ByteArrayInputStream(byteArrayOf(1, 2, 3, 4))
+            }.`when`(contentResolver).openInputStream(any())
+
+            // Mock dataCenterCloudManager.uploadFile to accept any input stream and progress callback
+            doAnswer { invocation ->
+                val progressCallback = invocation.getArgument<(com.cloud.communication.cryto.FileUploader.ChunkProgress) -> Unit>(2)
+                // Simulate completion
+                progressCallback.invoke(
+                    com.cloud.communication.cryto.FileUploader.ChunkProgress(
+                        "test.jpg",
+                        1,
+                        1,
+                        true
+                    )
+                )
+                null
+            }.`when`(dataCenterCloudManager).uploadFile(any(), any(), any())
 
             // --- THE FIX: Capture Snapshots, Not References ---
             // Create a list to hold deep copies of the arguments at the time of invocation.

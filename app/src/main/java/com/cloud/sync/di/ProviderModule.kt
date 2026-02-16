@@ -15,8 +15,12 @@ object ProviderModule {
 
     @Provides
     @Singleton
-    fun provideZeroKnowledgeProof(cseMasterKeyRepository: ICseMasterKeyRepository): IZeroKnowledgeProof {
+    fun provideZeroKnowledgeProof(cseMasterKeyRepository: ICseMasterKeyRepository): IZeroKnowledgeProof? {
         val masterKey = cseMasterKeyRepository.getKey()
-        return ZeroKnowledgeProof(masterKey)
+        return if (masterKey != null) {
+            ZeroKnowledgeProof(masterKey)
+        } else {
+            null
+        }
     }
 }

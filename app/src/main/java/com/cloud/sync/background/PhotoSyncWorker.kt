@@ -1,13 +1,16 @@
 package com.cloud.sync.background
 
 import android.content.Context
+import android.content.ContentResolver
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.cloud.communication.cryto.IZeroKnowledgeProof
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
 import com.cloud.sync.domain.repositroy.IGalleryRepository
 import com.cloud.sync.domain.repositroy.ISyncRepository
+import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +19,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.IOException
 
 @HiltWorker
 class PhotoSyncWorker @AssistedInject constructor(
@@ -23,7 +28,10 @@ class PhotoSyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val syncRepository: ISyncRepository,
     private val galleryRepository: IGalleryRepository,
-    private val syncConfig: SyncConfig
+    private val syncConfig: SyncConfig,
+    private val contentResolver: ContentResolver,
+    private val zeroKnowledgeProof: IZeroKnowledgeProof?,
+    private val dataCenterCloudManager: ICloudManager
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -85,12 +93,53 @@ class PhotoSyncWorker @AssistedInject constructor(
             ensureActive()
 
             withContext(Dispatchers.IO) {
-                delay(1000)
-                println("Uploaded ${photo.displayName}")
-            }
+                try {
+                    // 1. Read original file content directly into memory
+                    val originalBytes =
+                        contentResolver.openInputStream(photo.path)?.use { inputStream ->
+                            inputStream.readBytes()
+                        } ?: throw IOException("Failed to read photo")
 
-            lastSyncedTimestamp = photo.dateAdded
-            photosInBatch++
+                    val fileContentToUpload: ByteArray
+                    val fileNameToUpload: String
+
+                    if (syncConfig.isEncryptionEnabled && zeroKnowledgeProof != null) {
+                        // 2. Generate encrypted filename from display name only
+                        fileNameToUpload = syncConfig.photoFolderPath +
+                            zeroKnowledgeProof.EncryptFullFileName(photo.displayName)
+
+                        // 3. Encrypt bytes directly in memory
+                        fileContentToUpload = zeroKnowledgeProof.encryptBytes(
+                            originalBytes,
+                            photo.displayName,  // Use only filename, not path
+                            photo.dateAdded     // Use photo's original timestamp
+                        )
+                    } else {
+                        // Skip encryption
+                        fileNameToUpload = syncConfig.photoFolderPath + photo.displayName
+                        fileContentToUpload = originalBytes
+                    }
+
+                    // 4. Upload bytes with the chosen filename (encrypted or original)
+                    ByteArrayInputStream(fileContentToUpload).use { uploadStream ->
+                        dataCenterCloudManager.uploadFile(
+                            uploadStream,
+                            fileNameToUpload
+                        ) { progress ->
+                            // Progress is handled in background, just log
+                            if (progress.isCompleted) {
+                                println("Worker: Uploaded ${photo.displayName}")
+                            }
+                        }
+                    }
+                    lastSyncedTimestamp = photo.dateAdded
+                    photosInBatch++
+                } catch (e: Exception) {
+                    println("Worker: Failed to upload ${photo.displayName}: ${e.message}")
+                    lastSyncedTimestamp = photo.dateAdded
+                    photosInBatch++
+                }
+            }
 
             if (photosInBatch >= batchSize) {
                 onBatchSave(lastSyncedTimestamp)

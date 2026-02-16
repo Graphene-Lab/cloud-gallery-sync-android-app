@@ -38,7 +38,7 @@ class FullScanProcessManager @Inject constructor(
     private val galleryRepository: IGalleryRepository,
     private val syncConfig: SyncConfig,
     private val contentResolver: ContentResolver,
-    private val zeroKnowledgeProof: IZeroKnowledgeProof,
+    private val zeroKnowledgeProof: IZeroKnowledgeProof?,
     private val dataCenterCloudManager: ICloudManager
 ) : IFullScanProcessManager {
 
@@ -149,21 +149,32 @@ class FullScanProcessManager @Inject constructor(
                                     inputStream.readBytes()
                                 } ?: throw IOException("Failed to read photo")
 
-                            // 2. Generate encrypted filename from display name only
-                            val encryptedFilename =
+                            val fileContentToUpload: ByteArray
+                            val fileNameToUpload: String
+
+                            if (syncConfig.isEncryptionEnabled && zeroKnowledgeProof != null) {
+                                // 2. Generate encrypted filename from display name only
+                                fileNameToUpload = syncConfig.photoFolderPath +
                                 zeroKnowledgeProof.EncryptFullFileName(photo.displayName)
 
-                            // 3. Encrypt bytes directly in memory
-                            val encryptedBytes = zeroKnowledgeProof.encryptBytes(
-                                originalBytes, photo.displayName,  // Use only filename, not path
-                                photo.dateAdded     // Use photo's original timestamp
-                            )
+                                // 3. Encrypt bytes directly in memory
+                                fileContentToUpload = zeroKnowledgeProof.encryptBytes(
+                                    originalBytes,
+                                    photo.displayName,  // Use only filename, not path
+                                    photo.dateAdded     // Use photo's original timestamp
+                                )
+                            } else {
+                                // Skip encryption
+                                fileNameToUpload = syncConfig.photoFolderPath + photo.displayName
+                                fileContentToUpload = originalBytes
+                            }
 
-                            // 4. Upload encrypted bytes with encrypted filename
-                            ByteArrayInputStream(encryptedBytes).use { encryptedStream ->
+
+                            // 4. Upload bytes with the chosen filename (encrypted or original)
+                            ByteArrayInputStream(fileContentToUpload).use { uploadStream ->
                                 dataCenterCloudManager.uploadFile(
-                                    encryptedStream,
-                                    encryptedFilename  // Server sees encrypted filename
+                                    uploadStream,
+                                    fileNameToUpload
                                 ) { progress ->
                                     CoroutineScope(Dispatchers.Main).launch {
                                         if (progress.isCompleted) {
@@ -182,7 +193,7 @@ class FullScanProcessManager @Inject constructor(
                             }
                             photo.dateAdded // Return timestamp for batch tracking
                         } catch (e: Exception) {
-                            Log.e("PhotoSync", "Failed to encrypt ${photo.displayName}", e)
+                            Log.e("PhotoSync", "Failed to sync ${photo.displayName}", e)
                             photo.dateAdded
                         }
                     }

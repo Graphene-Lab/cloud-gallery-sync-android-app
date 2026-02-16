@@ -32,7 +32,7 @@ fun LoginScreen(
     LaunchedEffect(uiState) {
         if (uiState is LoginUiState.Authenticated) {
             Log.d(TAG, "Authentication successful, navigating to main screen")
-            if (viewModel.isCseMasterKeyGenerated()) {
+            if (viewModel.isEncryptionSetupComplete()) {
                 onLoginAndCseKeyGenerated()
             } else {
                 onLoginSuccess()

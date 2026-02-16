@@ -1,6 +1,7 @@
 package com.cloud.sync.ui.login
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,7 +10,6 @@ import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
 import com.cloud.sync.domain.repositroy.ISessionRepository
-import com.cloud.sync.manager.DataCenterCloudManager
 import com.cloud.sync.manager.OAuthManager
 import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,10 +25,13 @@ class LoginViewModel @Inject constructor(
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val sessionRepository: ISessionRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
+    private val sharedPreferences: SharedPreferences,
     private val cloudManager: ICloudManager
 ) : ViewModel() {
+
     companion object {
         private const val TAG = "LoginViewModel"
+        private const val KEY_ENCRYPTION_ENABLED = "is_encryption_enabled"
     }
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Loading)
@@ -123,8 +126,31 @@ class LoginViewModel @Inject constructor(
         _uiState.value = LoginUiState.Unauthenticated
     }
 
-    fun isCseMasterKeyGenerated(): Boolean {
-        cseMasterKeyRepository.getKey() ?: return false
-        return true
+    /**
+     * Checks if the user has skipped client-side encryption setup.
+     * @return true if user disabled encryption, false otherwise
+     */
+    private fun isEncryptionSkipped(): Boolean {
+        return !sharedPreferences.getBoolean(KEY_ENCRYPTION_ENABLED, true)
+    }
+
+    /**
+     * Checks if client-side encryption master key has been generated.
+     * @return true if a master key exists in secure storage
+     */
+    private fun isCseMasterKeyGenerated(): Boolean {
+        return cseMasterKeyRepository.getKey() != null
+    }
+
+    /**
+     * Checks if the encryption setup is complete.
+     * This is true if either:
+     * 1. User has skipped encryption setup, OR
+     * 2. User has generated/recovered a master key
+     *
+     * @return true if encryption setup is complete (can skip mnemonic screen)
+     */
+    fun isEncryptionSetupComplete(): Boolean {
+        return isEncryptionSkipped() || isCseMasterKeyGenerated()
     }
 }

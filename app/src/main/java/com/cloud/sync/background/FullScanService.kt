@@ -95,6 +95,7 @@ class FullScanService : Service() {
         RequestManager.cancelAllPendingRequests()
         serviceScope.coroutineContext.cancelChildren()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        SyncStatusManager.updateSyncStatus(false)
         stopSelf()
     }
 

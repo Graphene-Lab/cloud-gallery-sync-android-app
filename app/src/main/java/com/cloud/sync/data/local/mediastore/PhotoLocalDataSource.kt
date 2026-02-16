@@ -57,6 +57,11 @@ class PhotoLocalDataSource @Inject constructor(
         val selection = selectionParts.joinToString(" AND ")
         val selectionArgs = selectionArgsList.toTypedArray()
 
+        //TODO: problem can occur with photos with same date added since DATE_ADDED is in seconds. Consider adding _ID to sort order for tie-breaking.
+        // for example user took 2 photos in same second, and when full syncing we sync first photo and app crashes before syncing second photo,
+        // so when sync starts again we omit second, since we already saved last sync time of the interval when syncing first one, and now we start from last sync time + 1...
+        // (on the other hand to solve this issue if we start from last sync (without +1) time then we will have reuploads...)
+        // Ps crash while syncing exactly at the moment syncing happens with same second can happen in rare cases so not critical for now.
         val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} ASC"
         //note: if no photos found check if permission granted.
         context.contentResolver.query(

@@ -11,6 +11,9 @@ class SyncRepositoryImpl @Inject constructor(
 
     override val syncedIntervals = prefs.syncedIntervals
 
+    // TODO: intervals also need to be stored in cloud(e.g. in file named deviceId_intervals in json format) in case of app reinstallation. If user syncs from another device then we need to detect that,
+    //  since now we synchronize from 2 devices... each of them has its own sync intervals we need to consider that, and store 2 intervals in cloud (with device ID).
+    //  Maybe we store like this in cloud: deviceId1/photos, deviceId2/photos... and in explorer we show both of them. Status: critical.
     override suspend fun saveSyncedIntervals(intervals: List<TimeInterval>) {
         prefs.saveSyncedIntervals(intervals)
     }
