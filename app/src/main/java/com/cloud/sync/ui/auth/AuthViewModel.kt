@@ -2,8 +2,10 @@ package com.cloud.sync.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cloud.sync.domain.model.CloudSpaceCredentials
+import com.cloud.sync.domain.repositroy.ISessionRepository
+import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +14,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AuthViewModel @Inject constructor() : ViewModel() {
+class AuthViewModel @Inject constructor(
+    private val cloudManager: ICloudManager,
+    private val sessionRepository: ISessionRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
 
@@ -28,23 +33,30 @@ class AuthViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun authenticate() {
+    fun authenticate(qrEncrypted: String?) {
         viewModelScope.launch {
-            // Set loading state to true
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
-                // TODO: Replace this with your actual authentication logic
-                delay(2000)
+                val pinValue = uiState.value.pin.toIntOrNull()
+                if (qrEncrypted.isNullOrBlank()) {
+                    throw IllegalStateException("No QR code provided. Please scan a QR code first.")
+                }
+                if (pinValue == null) {
+                    throw IllegalStateException("Invalid PIN format. Please enter 6 digits.")
+                }
 
-                if (uiState.value.pin == "123456") {
+                cloudManager.pair(qrEncrypted, pinValue).onSuccess {
+                    val credentials = CloudSpaceCredentials(
+                        qrEncrypted = qrEncrypted,
+                        pin = pinValue
+                    )
+                    sessionRepository.saveCloudSpaceCredentials(credentials)
                     _uiState.update { it.copy(isAuthenticated = true, isLoading = false) }
-                } else {
-                    // Handle incorrect PIN
-                    throw Exception("Invalid PIN. Please try again.")
+                }.onFailure { exception ->
+                    throw exception
                 }
             } catch (e: Exception) {
-                // Handle any errors during authentication
                 _uiState.update {
                     it.copy(
                         isLoading = false,

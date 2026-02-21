@@ -15,11 +15,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AuthScreen(
-    authViewModel: AuthViewModel = viewModel(),
+    qrEncrypted: String?,
+    authViewModel: AuthViewModel = hiltViewModel(),
     onAuthenticationSuccess: () -> Unit
 ) {
     val uiState by authViewModel.uiState.collectAsState()
@@ -29,6 +30,8 @@ fun AuthScreen(
             onAuthenticationSuccess()
         }
     }
+
+    val isQrAvailable = !qrEncrypted.isNullOrBlank()
 
     Box(
         modifier = Modifier
@@ -62,6 +65,15 @@ fun AuthScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                if (!isQrAvailable) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "No QR code provided. Please scan a QR code first.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // PIN Input Field
@@ -74,8 +86,8 @@ fun AuthScreen(
 
                 // Authenticate Button
                 Button(
-                    onClick = { authViewModel.authenticate() },
-                    enabled = uiState.pin.length == 6 && !uiState.isLoading,
+                    onClick = { authViewModel.authenticate(qrEncrypted) },
+                    enabled = isQrAvailable && uiState.pin.length == 6 && !uiState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
@@ -162,5 +174,5 @@ fun PinInputField(
 fun AuthScreenPreview() {
     // This is a preview and won't have a real ViewModel
     // we can simulate different states here
-    AuthScreen(onAuthenticationSuccess = {})
+    AuthScreen(qrEncrypted = null, onAuthenticationSuccess = {})
 }

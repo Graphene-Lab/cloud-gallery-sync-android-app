@@ -27,21 +27,31 @@ fun AppNavigation() {
 
         composable("scan") {
             ScanScreen(onNavigateToResult = { scannedContent ->
-                navController.navigate("sync/$scannedContent")
+                navController.currentBackStackEntry?.savedStateHandle?.set(
+                    "qr_encrypted",
+                    scannedContent
+                )
+                navController.navigate("auth")
             })
         }
 
         composable("auth") {
-            AuthScreen(onAuthenticationSuccess = {
-                // When authentication is successful, navigate to the SyncScreen
-                navController.navigate("sync") {
-                    // This is important! It clears the navigation stack so the user
-                    // can't press the back button to go back to the AuthScreen.
-                    popUpTo("auth") {
-                        inclusive = true
+            val qrEncrypted = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>("qr_encrypted")
+            AuthScreen(
+                qrEncrypted = qrEncrypted,
+                onAuthenticationSuccess = {
+                    // When authentication is successful, navigate to the SyncScreen
+                    navController.navigate("sync") {
+                        // This is important! It clears the navigation stack so the user
+                        // can't press the back button to go back to the AuthScreen.
+                        popUpTo("auth") {
+                            inclusive = true
+                        }
                     }
                 }
-            })
+            )
         }
         composable(
             route = "sync",
@@ -55,23 +65,29 @@ fun AppNavigation() {
         }
 
         composable("login") {
-            LoginScreen(onLoginAndCseKeyGenerated = {
-                Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
-                navController.navigate("sync") {
-                    popUpTo("login") {
-                        inclusive = true
+            LoginScreen(
+                onLoginAndCseKeyGenerated = {
+                    Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
+                    navController.navigate("sync") {
+                        popUpTo("login") {
+                            inclusive = true
+                        }
                     }
-                }
-            }, onLoginSuccess = {
-                navController.navigate("mnemonic") {
-                    Log.w(
-                        "auth",
-                        "onLoginAndCseKeyGenerated() called. Navigating to MnemonicScreen..."
-                    )
+                },
+                onLoginSuccess = {
+                    navController.navigate("mnemonic") {
+                        Log.w(
+                            "auth",
+                            "onLoginAndCseKeyGenerated() called. Navigating to MnemonicScreen..."
+                        )
 
-                    popUpTo("login") {}
+                        popUpTo("login") {}
+                    }
+                },
+                onNavigateToScan = {
+                    navController.navigate("scan")
                 }
-            })
+            )
         }
 
         composable("profile") {

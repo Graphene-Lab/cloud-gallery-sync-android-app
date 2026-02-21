@@ -24,6 +24,7 @@ private const val TAG = "LoginScreen"
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onLoginAndCseKeyGenerated: () -> Unit,
+    onNavigateToScan: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -120,6 +121,10 @@ fun LoginScreen(
                             authLauncher.launch(authIntent)
                         }) {
                             Text("Sign In with Keycloak")
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedButton(onClick = onNavigateToScan) {
+                            Text("Scan QR Code + Enter PIN")
                         }
                     }
                 }
