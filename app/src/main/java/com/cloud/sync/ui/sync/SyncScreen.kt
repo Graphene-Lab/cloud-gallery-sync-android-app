@@ -1,5 +1,10 @@
 package com.cloud.sync.ui.sync
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -203,6 +208,17 @@ fun SyncScreen(
 
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { openExplorerApp(context) },
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(48.dp)
+                ) {
+                    Text("Download Explorer")
+                }
+
                 if (uiState.permissionDenied) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
                     Text(
@@ -215,4 +231,38 @@ fun SyncScreen(
             }
         }
     }
+}
+
+private const val EXPLORER_PACKAGE = "com.khayym.cloudstorage"
+private const val EXPLORER_DEEPLINK = "com.cloudapp://"
+private const val EXPLORER_DOWNLOAD_URL = "https://github.com/ramazan199/graphene-cloud-explorer-react-native-app/releases/tag/v1.0.0"
+
+private fun openExplorerApp(context: Context) {
+    val packageManager = context.packageManager
+    val isInstalled = try {
+        packageManager.getPackageInfo(EXPLORER_PACKAGE, 0)
+        true
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
+    }
+
+    if (isInstalled) {
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(EXPLORER_DEEPLINK)).apply {
+            setPackage(EXPLORER_PACKAGE)
+        }
+
+        try {
+            context.startActivity(deepLinkIntent)
+            return
+        } catch (e: ActivityNotFoundException) {
+            val launchIntent = packageManager.getLaunchIntentForPackage(EXPLORER_PACKAGE)
+            if (launchIntent != null) {
+                context.startActivity(launchIntent)
+                return
+            }
+        }
+    }
+
+    val downloadIntent = Intent(Intent.ACTION_VIEW, Uri.parse(EXPLORER_DOWNLOAD_URL))
+    context.startActivity(downloadIntent)
 }
