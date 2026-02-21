@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
+import com.cloud.sync.domain.repositroy.ISessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ class ProfileViewModel @Inject constructor(
     private val oauthTokenRepository: IOauthTokenRepository,
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
+    private val sessionRepository: ISessionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -26,6 +28,7 @@ class ProfileViewModel @Inject constructor(
     init {
         loadUserProfile()
         loadCurrentSubscriptionPlan()
+        loadCloudCredentials()
     }
 
     private fun loadUserProfile() {
@@ -56,6 +59,28 @@ class ProfileViewModel @Inject constructor(
                     }
                     return@onFailure
                 }
+        }
+    }
+
+    private fun loadCloudCredentials() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingCredentials = true, credentialsError = null) }
+            try {
+                val credentials = sessionRepository.loadCloudSpaceCredentials()
+                _uiState.update {
+                    it.copy(
+                        cloudCredentials = credentials,
+                        isLoadingCredentials = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoadingCredentials = false,
+                        credentialsError = e.message ?: "Failed to load credentials"
+                    )
+                }
+            }
         }
     }
 

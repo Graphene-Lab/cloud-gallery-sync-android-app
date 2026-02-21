@@ -91,6 +91,8 @@ class LoginViewModel @Inject constructor(
                         if (BuildConfig.DEBUG) {
                             Log.d(TAG, "fetched cloudSpace credentials: ${credentials.qrEncrypted}")
                         }
+                        runCatching { sessionRepository.saveCloudSpaceCredentials(credentials) }
+                            .onFailure { e -> Log.w(TAG, "Failed to save cloud space credentials", e) }
                         cloudManager.pair(credentials.qrEncrypted, credentials.pin).onSuccess {
                             Log.d(TAG, "handleAuthResult: Connected to cloud")
 

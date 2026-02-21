@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.cloud.sync.domain.model.SessionDataModel
+import com.cloud.sync.domain.model.CloudSpaceCredentials
 import com.cloud.sync.domain.repositroy.ISessionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ class SessionRepository @Inject constructor(
         private const val SESSION_KEY = "session_data"
         private const val TAG = "SessionRepository"
         private const val MASTER_KEY_ALIAS = "_androidx_security_master_key_"
+        private const val CLOUD_CREDENTIALS_KEY = "cloud_space_credentials"
     }
 
     private val json = Json {
@@ -194,6 +196,35 @@ class SessionRepository @Inject constructor(
             session
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load communication session", e)
+            null
+        }
+    }
+
+    override suspend fun saveCloudSpaceCredentials(credentials: CloudSpaceCredentials) = withContext(Dispatchers.IO) {
+        try {
+            val credentialsJson = json.encodeToString(credentials)
+            encryptedPrefs.edit {
+                putString(CLOUD_CREDENTIALS_KEY, credentialsJson)
+            }
+            Log.d(TAG, "Cloud space credentials saved successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save cloud space credentials", e)
+            throw e
+        }
+    }
+
+    override suspend fun loadCloudSpaceCredentials(): CloudSpaceCredentials? = withContext(Dispatchers.IO) {
+        try {
+            val credentialsJson = encryptedPrefs.getString(CLOUD_CREDENTIALS_KEY, null)
+            if (credentialsJson != null) {
+                Log.d(TAG, "Cloud space credentials loaded successfully")
+                json.decodeFromString<CloudSpaceCredentials>(credentialsJson)
+            } else {
+                Log.d(TAG, "No saved cloud space credentials found")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load cloud space credentials", e)
             null
         }
     }
