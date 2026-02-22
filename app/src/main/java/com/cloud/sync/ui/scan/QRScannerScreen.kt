@@ -2,11 +2,13 @@ package com.cloud.sync.ui.scan
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,9 +16,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.cloud.sync.R
 import com.journeyapps.barcodescanner.ScanContract
 
 // ScanScreen.kt
@@ -66,19 +73,60 @@ private fun ScanContent(
     uiState: ScanUiState,
     onScanClicked: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        ScanButton(onClick = onScanClicked)
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Connect to Your Cloud",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "1. Open your desktop client and navigate to the QR code panel",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "2. Scan the QR code below using your camera",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "3. Enter the PIN from your authentication app",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-        when (val state = uiState) {
-            is ScanUiState.PermissionDenied -> PermissionDeniedMessage()
-            is ScanUiState.Scanned -> ScannedContent(content = state.content)
-            ScanUiState.Idle, ScanUiState.PermissionGranted -> {} // No UI for these states
+            Spacer(modifier = Modifier.height(20.dp))
+            val sampleShape = RoundedCornerShape(10.dp)
+            Image(
+                painter = painterResource(id = R.drawable.windows_client_qr_sample),
+                contentDescription = "Sample QR code",
+                contentScale = ContentScale.FillBounds, // This forces the image to hit the corners
+                modifier = Modifier
+                    .size(280.dp)
+                    .clip(sampleShape) // Now it has something to clip!
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            ScanButton(onClick = onScanClicked)
+
+            when (val state = uiState) {
+                is ScanUiState.PermissionDenied -> PermissionDeniedMessage()
+                is ScanUiState.Scanned -> ScannedContent(content = state.content)
+                ScanUiState.Idle, ScanUiState.PermissionGranted -> {} // No UI for these states
+            }
         }
     }
 }
@@ -93,8 +141,9 @@ private fun ScanButton(onClick: () -> Unit) {
 @Composable
 private fun PermissionDeniedMessage() {
     Text(
-        text = "Permission denied. Please grant camera access.",
-        modifier = Modifier.padding(top = 16.dp)
+        text = "Camera permission denied. Please grant camera access and try again.",
+        modifier = Modifier.padding(top = 16.dp),
+        textAlign = TextAlign.Center
     )
 }
 
@@ -102,6 +151,7 @@ private fun PermissionDeniedMessage() {
 private fun ScannedContent(content: String?) {
     Text(
         text = "Scanned: ${content ?: "Nothing"}",
-        modifier = Modifier.padding(top = 16.dp)
+        modifier = Modifier.padding(top = 16.dp),
+        textAlign = TextAlign.Center
     )
 }
