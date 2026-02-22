@@ -9,9 +9,9 @@ import com.cloud.sync.ui.auth.AuthScreen
 import com.cloud.sync.ui.login.LoginScreen
 import com.cloud.sync.ui.profile.ProfileScreen
 import com.cloud.sync.ui.mnemonic.MnemonicScreen
-import com.cloud.sync.ui.scan.ScanScreen
 import com.cloud.sync.ui.subscription.SubscriptionScreen
 import com.cloud.sync.ui.sync.SyncScreen
+import com.cloud.sync.ui.scan.ScanScreen
 
 
 @Composable
@@ -25,16 +25,6 @@ fun AppNavigation() {
         startDestination = "login"
     ) {
 
-        composable("scan") {
-            ScanScreen(onNavigateToResult = { scannedContent ->
-                navController.currentBackStackEntry?.savedStateHandle?.set(
-                    "qr_encrypted",
-                    scannedContent
-                )
-                navController.navigate("auth")
-            })
-        }
-
         composable("auth") {
             val qrEncrypted = navController.previousBackStackEntry
                 ?.savedStateHandle
@@ -42,14 +32,28 @@ fun AppNavigation() {
             AuthScreen(
                 qrEncrypted = qrEncrypted,
                 onAuthenticationSuccess = {
-                    // When authentication is successful, navigate to the SyncScreen
+                    // CSE setup is complete, go directly to sync
                     navController.navigate("sync") {
-                        // This is important! It clears the navigation stack so the user
-                        // can't press the back button to go back to the AuthScreen.
                         popUpTo("auth") {
                             inclusive = true
                         }
                     }
+                },
+                onAuthenticationSuccessWithoutCse = {
+                    // Need to set up CSE, go to mnemonic screen first
+                    navController.navigate("mnemonic") {
+                        popUpTo("auth") {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+        }
+        composable("scan") {
+            ScanScreen(
+                onNavigateToResult = { qrCode ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("qr_encrypted", qrCode)
+                    navController.navigate("auth")
                 }
             )
         }

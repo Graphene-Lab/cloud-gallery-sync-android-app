@@ -56,6 +56,7 @@ fun LoginScreen(
         }
     }
 
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -123,8 +124,19 @@ fun LoginScreen(
                             Text("Sign In with Keycloak")
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = onNavigateToScan) {
-                            Text("Scan QR Code + Enter PIN")
+                        Text(
+                            text = "Already have desktop client?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = {
+                            if (BuildConfig.DEBUG) {
+                                Log.d(TAG, "Scan QR Code button clicked, opening scan screen")
+                            }
+                            onNavigateToScan()
+                        }) {
+                            Text("Connect via QR Code")
                         }
                     }
                 }

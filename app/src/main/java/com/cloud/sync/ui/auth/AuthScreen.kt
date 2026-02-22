@@ -21,13 +21,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun AuthScreen(
     qrEncrypted: String?,
     authViewModel: AuthViewModel = hiltViewModel(),
-    onAuthenticationSuccess: () -> Unit
+    onAuthenticationSuccess: () -> Unit,
+    onAuthenticationSuccessWithoutCse: () -> Unit
 ) {
     val uiState by authViewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState.isAuthenticated) {
         if (uiState.isAuthenticated) {
-            onAuthenticationSuccess()
+            if (authViewModel.isEncryptionSetupComplete()) {
+                onAuthenticationSuccess()
+            } else {
+                onAuthenticationSuccessWithoutCse()
+            }
         }
     }
 
@@ -133,7 +138,10 @@ fun PinInputField(
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         decorationBox = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
                 repeat(pinLength) { index ->
                     val char = when {
                         index < pin.length -> pin[index].toString()
@@ -142,7 +150,7 @@ fun PinInputField(
                     val isFocused = index < pin.length
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(44.dp)
                             .border(
                                 width = 1.dp,
                                 // Use the primary color when focused, otherwise use a less prominent color
@@ -163,6 +171,9 @@ fun PinInputField(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    if (index < pinLength - 1) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
                 }
             }
         }
@@ -174,5 +185,5 @@ fun PinInputField(
 fun AuthScreenPreview() {
     // This is a preview and won't have a real ViewModel
     // we can simulate different states here
-    AuthScreen(qrEncrypted = null, onAuthenticationSuccess = {})
+    AuthScreen(qrEncrypted = null, onAuthenticationSuccess = {}, onAuthenticationSuccessWithoutCse = {})
 }
