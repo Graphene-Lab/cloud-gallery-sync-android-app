@@ -96,6 +96,24 @@ class PhotoLocalDataSource @Inject constructor(
         return photos
     }
 
+    /**
+     * Gets URIs of synced photos for deletion.
+     * Returns list of photo URIs to delete.
+     */
+    fun getSyncedPhotosUris(intervals: List<com.cloud.sync.domain.model.TimeInterval>): List<Uri> {
+        if (intervals.isEmpty()) return emptyList()
+
+        val photoUris = mutableListOf<Uri>()
+
+        // Collect photo URIs for each interval
+        intervals.forEach { interval ->
+            val photos = getPhotosInInterval(interval.start, interval.end)
+            photoUris.addAll(photos.map { it.path })
+        }
+
+        return photoUris
+    }
+
     companion object {
         private const val DEBUG_CAMERA_FOLDER = "TestCamera"
         private const val RELEASE_CAMERA_FOLDER = "Camera"

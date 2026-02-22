@@ -1,17 +1,25 @@
 package com.cloud.sync.ui.profile
 
+import android.content.ContentResolver
+import android.os.Build
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
+import com.cloud.sync.domain.repositroy.IGalleryRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
 import com.cloud.sync.domain.repositroy.ISessionRepository
+import com.cloud.sync.domain.repositroy.ISyncRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,11 +27,18 @@ class ProfileViewModel @Inject constructor(
     private val oauthTokenRepository: IOauthTokenRepository,
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
-    private val sessionRepository: ISessionRepository
+    private val sessionRepository: ISessionRepository,
+    private val syncRepository: ISyncRepository,
+    private val galleryRepository: IGalleryRepository,
+    private val contentResolver: ContentResolver
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+    companion object {
+        private const val TAG = "ProfileViewModel"
+    }
 
     init {
         loadUserProfile()
@@ -95,6 +110,98 @@ class ProfileViewModel @Inject constructor(
 
     fun refreshSubscriptionPlan() {
         loadCurrentSubscriptionPlan()
+    }
+
+    fun deleteSyncedPhotos() {
+        viewModelScope.launch {
+            Log.d(TAG, "deleteSyncedPhotos: Starting deletion process")
+            _uiState.update { it.copy(isDeletingSyncedPhotos = true, deleteError = null, deletedPhotosCount = null, photoUrisToDelete = null) }
+            try {
+                // Only support Android 11+ (API 30+) for deletion
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    Log.w(TAG, "deleteSyncedPhotos: Deletion not supported on Android 10 and below")
+                    _uiState.update {
+                        it.copy(
+                            isDeletingSyncedPhotos = false,
+                            deleteError = "This feature requires Android 11 or higher"
+                        )
+                    }
+                    return@launch
+                }
+
+                // Get synced intervals from repository
+                val intervals = syncRepository.syncedIntervals.first()
+                Log.d(TAG, "deleteSyncedPhotos: Found ${intervals.size} synced intervals")
+
+                if (intervals.isEmpty()) {
+                    Log.w(TAG, "deleteSyncedPhotos: No synced intervals found")
+                    _uiState.update {
+                        it.copy(
+                            isDeletingSyncedPhotos = false,
+                            deletedPhotosCount = 0,
+                            deleteError = null
+                        )
+                    }
+                    return@launch
+                }
+
+                // Get URIs of photos to delete
+                val photoUris = withContext(Dispatchers.IO) {
+                    galleryRepository.getSyncedPhotosUris(intervals)
+                }
+                Log.d(TAG, "deleteSyncedPhotos: Found ${photoUris.size} photos to delete")
+
+                if (photoUris.isEmpty()) {
+                    Log.w(TAG, "deleteSyncedPhotos: No photo URIs found")
+                    _uiState.update {
+                        it.copy(
+                            isDeletingSyncedPhotos = false,
+                            deletedPhotosCount = 0,
+                            deleteError = null
+                        )
+                    }
+                    return@launch
+                }
+
+                // For Android 11+ (API 30+), return URIs for UI to create delete request
+                Log.d(TAG, "deleteSyncedPhotos: Returning ${photoUris.size} photo URIs for deletion (Android 11+)")
+                _uiState.update {
+                    it.copy(
+                        isDeletingSyncedPhotos = false,
+                        photoUrisToDelete = photoUris
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "deleteSyncedPhotos: Error during deletion", e)
+                _uiState.update {
+                    it.copy(
+                        isDeletingSyncedPhotos = false,
+                        deleteError = e.message ?: "Failed to delete synced photos"
+                    )
+                }
+            }
+        }
+    }
+
+    fun onDeletePermissionResult(granted: Boolean, photosCount: Int) {
+        Log.d(TAG, "onDeletePermissionResult: granted=$granted, photosCount=$photosCount")
+        _uiState.update {
+            it.copy(
+                photoUrisToDelete = null,
+                deletedPhotosCount = if (granted) photosCount else null,
+                deleteError = if (!granted) "Permission denied to delete photos" else null
+            )
+        }
+    }
+
+    fun clearPhotoUrisToDelete() {
+        Log.d(TAG, "clearPhotoUrisToDelete: Clearing photo URIs")
+        _uiState.update { it.copy(photoUrisToDelete = null) }
+    }
+
+    fun clearDeleteStatus() {
+        Log.d(TAG, "clearDeleteStatus: Clearing delete status")
+        _uiState.update { it.copy(deletedPhotosCount = null, deleteError = null, photoUrisToDelete = null) }
     }
 
     fun logout() {
