@@ -29,6 +29,7 @@ class ProfileViewModel @Inject constructor(
         loadUserProfile()
         loadCurrentSubscriptionPlan()
         loadCloudCredentials()
+        checkLoginMode()
     }
 
     private fun loadUserProfile() {
@@ -81,6 +82,14 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    private fun checkLoginMode() {
+        viewModelScope.launch {
+            // If user has no email (didn't login via OAuth), they're in QR mode
+            val userEmail = oauthTokenRepository.getEmail()
+            _uiState.update { it.copy(isQrLoginMode = userEmail.isNullOrBlank()) }
         }
     }
 

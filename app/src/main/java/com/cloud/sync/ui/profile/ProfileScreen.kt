@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -53,11 +55,12 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Only show Email and Subscription Plan if NOT in QR login mode
+            if (!uiState.isQrLoginMode) {
                 // Email Section
                 Text(
                     text = "Email",
@@ -70,85 +73,101 @@ fun ProfileScreen(
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
+            }
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            // Cloud Credentials Section (always shown)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Cloud Credentials",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Cloud Credentials",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                        when {
-                            uiState.isLoadingCredentials -> {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Loading credentials...")
+                    when {
+                        uiState.isLoadingCredentials -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Loading credentials...")
+                            }
+                        }
+
+                        uiState.credentialsError != null -> {
+                            Text(
+                                text = "Error: ${uiState.credentialsError}",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        uiState.cloudCredentials == null -> {
+                            Text(
+                                text = "No credentials saved",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        else -> {
+                            val credentials = uiState.cloudCredentials
+                            Text(
+                                text = "Encrypted QR code",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = credentials?.qrEncrypted.orEmpty(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    copyToClipboard(
+                                        "Encrypted QR code",
+                                        credentials?.qrEncrypted.orEmpty()
+                                    )
                                 }
+                            ) {
+                                Text("Copy QR Code")
                             }
-                            uiState.credentialsError != null -> {
-                                Text(
-                                    text = "Error: ${uiState.credentialsError}",
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            uiState.cloudCredentials == null -> {
-                                Text(
-                                    text = "No credentials saved",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            else -> {
-                                val credentials = uiState.cloudCredentials
-                                Text(
-                                    text = "Encrypted QR code",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = credentials?.qrEncrypted.orEmpty(),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                OutlinedButton(
-                                    onClick = {
-                                        copyToClipboard(
-                                            "Encrypted QR code",
-                                            credentials?.qrEncrypted.orEmpty()
-                                        )
-                                    }
-                                ) {
-                                    Text("Copy QR Code")
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "PIN",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = credentials?.pin?.toString()?.padStart(6, '0').orEmpty(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    copyToClipboard(
+                                        "PIN",
+                                        credentials?.pin?.toString()?.padStart(6, '0').orEmpty()
+                                    )
                                 }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Text(
-                                    text = "PIN",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = credentials?.pin?.toString().orEmpty(),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-
+                            ) {
+                                Text("Copy PIN")
                             }
+
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Current Plan Section
+            // Current Plan Section (only show if NOT in QR login mode)
+            if (!uiState.isQrLoginMode) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -171,9 +190,9 @@ fun ProfileScreen(
                                 }
                             }
                         }
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         when {
                             uiState.isLoadingPlan -> {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -182,6 +201,7 @@ fun ProfileScreen(
                                     Text("Loading plan...")
                                 }
                             }
+
                             uiState.planError != null -> {
                                 Text(
                                     text = "Error: ${uiState.planError}",
@@ -189,6 +209,7 @@ fun ProfileScreen(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
+
                             uiState.currentPlan != null -> {
                                 val plan = uiState.currentPlan!!
                                 Column {
@@ -212,28 +233,33 @@ fun ProfileScreen(
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Button(onClick = onNavigateToSubscription) {
                     Text("Manage Subscription")
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        viewModel.logout()
-                        onLogout()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Logout")
-                }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    viewModel.logout()
+                    onLogout()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Logout")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
+
 
 @Preview
 @Composable

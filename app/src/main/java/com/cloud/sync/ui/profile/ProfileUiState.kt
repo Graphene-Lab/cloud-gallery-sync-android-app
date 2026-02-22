@@ -10,5 +10,6 @@ data class ProfileUiState(
     val planError: String? = null,
     val cloudCredentials: CloudSpaceCredentials? = null,
     val isLoadingCredentials: Boolean = false,
-    val credentialsError: String? = null
+    val credentialsError: String? = null,
+    val isQrLoginMode: Boolean = false
 )
