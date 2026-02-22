@@ -41,6 +41,34 @@ public class RequestManager {
 
     public static String proxy = "http://proxy.tc0.it:5050";
 
+    public static void updateProxyFromEntryPoint(String entryPoint) {
+        if (entryPoint == null || entryPoint.trim().isEmpty()) {
+            return;
+        }
+        String trimmed = entryPoint.trim();
+        if(trimmed.equals("proxy")){
+            trimmed = "proxy.tc0.it";
+        }
+        boolean hasScheme = trimmed.startsWith("http://") || trimmed.startsWith("https://");
+        String normalized = hasScheme ? trimmed : "http://" + trimmed;
+
+        HttpUrl parsed = HttpUrl.parse(normalized);
+        if (parsed == null || parsed.host().isEmpty()) {
+            return;
+        }
+
+        String withoutScheme = hasScheme ? trimmed.substring(trimmed.indexOf("://") + 3) : trimmed;
+        String hostPortPart = withoutScheme.split("/", 2)[0];
+        boolean portSpecified = hostPortPart.contains(":");
+
+        String scheme = parsed.scheme();
+        String host = parsed.host();
+        int port = portSpecified ? parsed.port() : 5050;
+
+        proxy = scheme + "://" + host + ":" + port;
+        System.out.println("Proxy updated from entry point: " + proxy);
+    }
+
     // Session persistence callback
     public static SessionPersistenceCallback persistenceCallback;
 
@@ -94,6 +122,7 @@ public class RequestManager {
         }
 
         HttpUrl url = urlBuilder.build();
+        System.out.println("Executing request URL: " + url);
         Request.Builder requestBuilder = new Request.Builder().url(url)
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
                 .header("Accept", "*/*")

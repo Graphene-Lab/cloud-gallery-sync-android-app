@@ -51,7 +51,7 @@ public class QrCodeHandler {
         offset += 8;
 
         session.setEntryPoint(bufferToString(Arrays.copyOfRange(qr, offset, qr.length)));
-//        entryPointToProxy(session.getEntryPoint());
+        RequestManager.updateProxyFromEntryPoint(session.getEntryPoint());
 
         RequestManager.executeRequest(Command.GetEncryptedQR.getId(), null);
     }
