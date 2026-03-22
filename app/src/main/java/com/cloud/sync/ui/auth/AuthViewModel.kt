@@ -1,11 +1,13 @@
 package com.cloud.sync.ui.auth
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cloud.sync.common.crypto.ZeroKnowledgeAuthUtils
 import com.cloud.sync.domain.model.CloudSpaceCredentials
-import com.cloud.sync.domain.repositroy.ISessionRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
+import com.cloud.sync.domain.repositroy.ISessionRepository
 import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,12 +43,35 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun authenticate(qrEncrypted: String?) {
+    fun onUseZeroKnowledgeChanged(enabled: Boolean) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                useZeroKnowledge = enabled,
+                zeroKnowledgePassphrase = if (enabled) {
+                    currentState.zeroKnowledgePassphrase
+                } else {
+                    ""
+                },
+                errorMessage = null
+            )
+        }
+    }
+
+    fun onZeroKnowledgePassphraseChanged(passphrase: String) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                zeroKnowledgePassphrase = passphrase,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun authenticate(qrEncrypted: String?, pin: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
-                val pinValue = uiState.value.pin.toIntOrNull()
+                val pinValue = pin.toIntOrNull()
                 if (qrEncrypted.isNullOrBlank()) {
                     throw IllegalStateException("No QR code provided. Please scan a QR code first.")
                 }
@@ -54,12 +79,34 @@ class AuthViewModel @Inject constructor(
                     throw IllegalStateException("Invalid PIN format. Please enter 6 digits.")
                 }
 
-                cloudManager.pair(qrEncrypted, pinValue).onSuccess {
+                val zeroKnowledgeMasterKey = if (uiState.value.useZeroKnowledge) {
+                    runCatching {
+                        ZeroKnowledgeAuthUtils.deriveMasterKey(uiState.value.zeroKnowledgePassphrase)
+                    }.getOrElse {
+                        throw IllegalStateException(
+                            "Invalid zero-knowledge passphrase. Please check and try again.",
+                            it
+                        )
+                    }
+                } else {
+                    null
+                }
+                val zeroKnowledgeChecksum = zeroKnowledgeMasterKey?.let {
+                    ZeroKnowledgeAuthUtils.deriveAuthenticationChecksum(it)
+                }
+
+                cloudManager.pair(qrEncrypted, pinValue, zeroKnowledgeChecksum).onSuccess {
                     val credentials = CloudSpaceCredentials(
                         qrEncrypted = qrEncrypted,
                         pin = pinValue
                     )
                     sessionRepository.saveCloudSpaceCredentials(credentials)
+                    if (zeroKnowledgeMasterKey != null) {
+                        cseMasterKeyRepository.saveKey(zeroKnowledgeMasterKey)
+                    }
+                    sharedPreferences.edit {
+                        putBoolean(KEY_ENCRYPTION_ENABLED, zeroKnowledgeMasterKey != null)
+                    }
                     _uiState.update { it.copy(isAuthenticated = true, isLoading = false) }
                 }.onFailure { exception ->
                     throw exception

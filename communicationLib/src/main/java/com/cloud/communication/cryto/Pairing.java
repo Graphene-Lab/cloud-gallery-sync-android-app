@@ -46,12 +46,17 @@ public class Pairing {
 
 
     public static void authenticate(byte[] auth) {
-        var pin = SessionManager.getCurrentSession().getPin();
+        var session = SessionManager.getCurrentSession();
+        var pin = session.getPin();
         byte[] pin4 = int32ToBuffer(pin);
         byte[] authentication = joinBuffers(auth, pin4);
 
         byte[] hash = hash256(authentication);
         byte[] verify = Arrays.copyOfRange(hash, 0, 4);
-        executeRequest(Command.Authentication.getId(), verify);
+        byte[] zeroKnowledgeChecksum = session.getZeroKnowledgeChecksum();
+        byte[] payload = zeroKnowledgeChecksum != null && zeroKnowledgeChecksum.length > 0
+                ? joinBuffers(verify, zeroKnowledgeChecksum)
+                : verify;
+        executeRequest(Command.Authentication.getId(), payload);
     }
 }

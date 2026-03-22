@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.cloud.sync.ui.auth.AuthScreen
+import com.cloud.sync.ui.auth.AuthZeroKnowledgeScreen
 import com.cloud.sync.ui.login.LoginScreen
 import com.cloud.sync.ui.profile.ProfileScreen
 import com.cloud.sync.ui.mnemonic.MnemonicScreen
@@ -31,8 +32,30 @@ fun AppNavigation() {
                 ?.get<String>("qr_encrypted")
             AuthScreen(
                 qrEncrypted = qrEncrypted,
+                onContinue = { pin ->
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("qr_encrypted", qrEncrypted)
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("auth_pin", pin)
+                    navController.navigate("auth_zk")
+                }
+            )
+        }
+        composable("auth_zk") {
+            val qrEncrypted = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>("qr_encrypted")
+            val pin = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>("auth_pin")
+                .orEmpty()
+
+            AuthZeroKnowledgeScreen(
+                qrEncrypted = qrEncrypted,
+                pin = pin,
                 onAuthenticationSuccess = {
-                    // CSE setup is complete, go directly to sync
                     navController.navigate("sync") {
                         popUpTo("auth") {
                             inclusive = true
@@ -40,8 +63,7 @@ fun AppNavigation() {
                     }
                 },
                 onAuthenticationSuccessWithoutCse = {
-                    // Need to set up CSE, go to mnemonic screen first
-                    navController.navigate("mnemonic") {
+                    navController.navigate("sync") {
                         popUpTo("auth") {
                             inclusive = true
                         }

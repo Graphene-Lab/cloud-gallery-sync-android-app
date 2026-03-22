@@ -17,6 +17,14 @@ import static com.cloud.communication.cryto.encryption.RsaEncryption.encryptData
 
 public class QrCodeHandler {
     public static CompletableFuture<Void> onQrCodeAcquired(String qrCode, int pin) {
+        return onQrCodeAcquired(qrCode, pin, null);
+    }
+
+    public static CompletableFuture<Void> onQrCodeAcquired(
+            String qrCode,
+            int pin,
+            byte[] zeroKnowledgeChecksum
+    ) {
         return SessionManager.resetSession()
                 .thenRun(() -> {
                     byte[] qr;
@@ -35,6 +43,7 @@ public class QrCodeHandler {
                     }
                     offset++;
                     SessionManager.getCurrentSession().setPin(pin);
+                    SessionManager.getCurrentSession().setZeroKnowledgeChecksum(zeroKnowledgeChecksum);
                     handleQrCode(qr, offset);
                 });
     }

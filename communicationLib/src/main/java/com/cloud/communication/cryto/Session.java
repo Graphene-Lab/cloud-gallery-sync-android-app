@@ -19,6 +19,7 @@ public class Session {
     private SecretKey symmetricKey;
 
     private int pin;
+    private byte[] zeroKnowledgeChecksum;
 
     public Session() {
         this(null);
@@ -131,5 +132,13 @@ public class Session {
     }
     public void setPin(int pin) {
         this.pin = pin;
+    }
+
+    public byte[] getZeroKnowledgeChecksum() {
+        return zeroKnowledgeChecksum;
+    }
+
+    public void setZeroKnowledgeChecksum(byte[] zeroKnowledgeChecksum) {
+        this.zeroKnowledgeChecksum = zeroKnowledgeChecksum;
     }
 }
