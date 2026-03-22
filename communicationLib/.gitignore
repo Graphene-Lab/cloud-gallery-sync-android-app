@@ -1,1 +1,9 @@
-/build
+# Ignore Gradle build output
+.gradle/
+build/
+# Ignore IDE-specific build outputs
+bin/
+out/
+
+# Ignore specific compiled classes
+*.class
