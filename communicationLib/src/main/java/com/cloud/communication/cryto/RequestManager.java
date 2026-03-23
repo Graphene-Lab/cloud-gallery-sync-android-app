@@ -35,6 +35,7 @@ public class RequestManager {
     private static final List<Pair<Integer, byte[]>> spooler = new ArrayList<>();
     private static final AtomicInteger concurrentRequest = new AtomicInteger(0);
     private static final int maxConcurrentRequest = 5;
+    private static final boolean DEBUG_CONCURRENCY_LOGS = true;
     private static final OkHttpClient client = new OkHttpClient();
     private static ExecutorService executor = Executors.newCachedThreadPool();
     private static final Set<Call> activeCalls = ConcurrentHashMap.newKeySet();//    public static String proxy = "http://195.20.235.5:5050";
@@ -78,6 +79,7 @@ public class RequestManager {
 
     public static synchronized void enqueueRequest(Integer commandId, byte[] data) {
         spooler.add(new Pair<>(commandId, data));
+        logConcurrencyState("enqueueRequest", commandId);
         tryStartNext();
     }
 
@@ -91,6 +93,7 @@ public class RequestManager {
             }
             if (nextRequest != null) {
                 concurrentRequest.incrementAndGet();
+                logConcurrencyState("dispatch", nextRequest.getFirst());
                 executeRequest(nextRequest.getFirst(), nextRequest.getSecond());
             }
         }
@@ -99,7 +102,7 @@ public class RequestManager {
     public static void executeRequest(Integer commandId, byte[] data) {
         if (commandId == null) {
             alertBox("Command does not exist");
-            requestDone();
+            requestDone("null-command");
             return;
         }
         byte[] requestData = data != null ? data : new byte[0];
@@ -107,7 +110,7 @@ public class RequestManager {
         HttpUrl baseUrl = HttpUrl.parse(proxyUrl);
         if (baseUrl == null) {
             alertBox("Invalid proxy URL");
-            requestDone();
+            requestDone("invalid-proxy-url");
             return;
         }
 
@@ -141,7 +144,7 @@ public class RequestManager {
 
         if (SessionManager.getCurrentSession().getDeviceKey() == null) {
             alertBox("Unregistered user. You need to log in to the server to initialize the encryption.");
-            requestDone();
+            requestDone("missing-device-key");
             return;
         }
 
@@ -156,12 +159,11 @@ public class RequestManager {
         byte[] encrypted;
         try {
             encrypted = encryptData(finalRequestData);
+            postRequest(requestBuilder, encrypted);
         } catch (Exception e) {
+            requestDone("execute-exception");
             throw new RuntimeException(e);
         }
-        postRequest(requestBuilder, encrypted);
-
-        requestDone();
     }
 
     private static void getRequest(Request.Builder requestBuilder) {
@@ -184,13 +186,13 @@ public class RequestManager {
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 activeCalls.remove(call);
                 alertBox("HTTP Request error: " + e.getMessage());
-                requestDone();
+                requestDone("http-failure");
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) {
                 activeCalls.remove(call);
-                requestDone();
+                requestDone("http-response-" + response.code());
                 int code = response.code();
                 switch (code) {
                     case 404:
@@ -266,8 +268,28 @@ public class RequestManager {
     }
 
     private static synchronized void requestDone() {
-        concurrentRequest.decrementAndGet();
+        requestDone("unspecified");
+    }
+
+    private static synchronized void requestDone(String reason) {
+        int current = concurrentRequest.decrementAndGet();
+        if (current < 0) {
+            System.out.println("[RequestManager][Concurrency] WARNING: concurrentRequest is negative (" + current + ")");
+        }
+        logConcurrencyState("requestDone:" + reason, null);
         tryStartNext();
+    }
+
+    private static synchronized void logConcurrencyState(String event, Integer commandId) {
+        if (!DEBUG_CONCURRENCY_LOGS) return;
+        String command = commandId == null ? "-" : getCommandName(commandId) + "(" + commandId + ")";
+        System.out.println(
+                "[RequestManager][Concurrency] " + event +
+                        " cmd=" + command +
+                        " concurrent=" + concurrentRequest.get() + "/" + maxConcurrentRequest +
+                        " queue=" + spooler.size() +
+                        " activeCalls=" + activeCalls.size()
+        );
     }
 
     public static void getEncryptedQR(String encryptedDataB64) throws Exception {
