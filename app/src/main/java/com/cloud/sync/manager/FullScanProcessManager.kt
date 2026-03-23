@@ -151,21 +151,21 @@ class FullScanProcessManager @Inject constructor(
 
                             val fileContentToUpload: ByteArray
                             val fileNameToUpload: String
+                            val clearFullPath = syncConfig.photoFolderPath + photo.displayName
 
                             if (syncConfig.isEncryptionEnabled && zeroKnowledgeProof != null) {
-                                // 2. Generate encrypted filename from display name only
-                                fileNameToUpload = syncConfig.photoFolderPath +
-                                zeroKnowledgeProof.EncryptFullFileName(photo.displayName)
+                                // 2. Encrypt the full transport path, not only the filename.
+                                fileNameToUpload = zeroKnowledgeProof.EncryptFullFileName(clearFullPath)
 
-                                // 3. Encrypt bytes directly in memory
+                                // 3. Derive the content key from the clear full path
                                 fileContentToUpload = zeroKnowledgeProof.encryptBytes(
                                     originalBytes,
-                                    photo.displayName,  // Use only filename, not path
-                                    photo.dateAdded     // Use photo's original timestamp
+                                    clearFullPath,
+                                    photo.lastModifiedSeconds 
                                 )
                             } else {
                                 // Skip encryption
-                                fileNameToUpload = syncConfig.photoFolderPath + photo.displayName
+                                fileNameToUpload = clearFullPath
                                 fileContentToUpload = originalBytes
                             }
 
@@ -174,7 +174,8 @@ class FullScanProcessManager @Inject constructor(
                             ByteArrayInputStream(fileContentToUpload).use { uploadStream ->
                                 dataCenterCloudManager.uploadFile(
                                     uploadStream,
-                                    fileNameToUpload
+                                    fileNameToUpload,
+                                    photo.lastModifiedSeconds
                                 ) { progress ->
                                     CoroutineScope(Dispatchers.Main).launch {
                                         if (progress.isCompleted) {

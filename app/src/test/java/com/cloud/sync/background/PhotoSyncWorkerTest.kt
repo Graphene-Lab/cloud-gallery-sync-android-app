@@ -180,7 +180,7 @@ class PhotoSyncWorkerTest {
                     )
                 )
                 null
-            }.`when`(dataCenterCloudManager).uploadFile(any(), any(), any())
+            }.`when`(dataCenterCloudManager).uploadFile(any(), any(), any(), any())
 
             // --- THE FIX: Capture Snapshots, Not References ---
             // Create a list to hold deep copies of the arguments at the time of invocation.

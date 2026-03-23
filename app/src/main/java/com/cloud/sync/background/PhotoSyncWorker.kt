@@ -102,21 +102,21 @@ class PhotoSyncWorker @AssistedInject constructor(
 
                     val fileContentToUpload: ByteArray
                     val fileNameToUpload: String
+                    val clearFullPath = syncConfig.photoFolderPath + photo.displayName
 
                     if (syncConfig.isEncryptionEnabled && zeroKnowledgeProof != null) {
-                        // 2. Generate encrypted filename from display name only
-                        fileNameToUpload = syncConfig.photoFolderPath +
-                            zeroKnowledgeProof.EncryptFullFileName(photo.displayName)
+                        // 2. Encrypt the full transport path, not only the filename.
+                        fileNameToUpload = zeroKnowledgeProof.EncryptFullFileName(clearFullPath)
 
-                        // 3. Encrypt bytes directly in memory
+                        // 3. Derive the content key from the clear full path
                         fileContentToUpload = zeroKnowledgeProof.encryptBytes(
                             originalBytes,
-                            photo.displayName,  // Use only filename, not path
-                            photo.dateAdded     // Use photo's original timestamp
+                            clearFullPath,
+                            photo.lastModifiedSeconds
                         )
                     } else {
                         // Skip encryption
-                        fileNameToUpload = syncConfig.photoFolderPath + photo.displayName
+                        fileNameToUpload = clearFullPath
                         fileContentToUpload = originalBytes
                     }
 
@@ -124,7 +124,8 @@ class PhotoSyncWorker @AssistedInject constructor(
                     ByteArrayInputStream(fileContentToUpload).use { uploadStream ->
                         dataCenterCloudManager.uploadFile(
                             uploadStream,
-                            fileNameToUpload
+                            fileNameToUpload,
+                            photo.lastModifiedSeconds //TODO: used for last chunk in ZK encrpytion, can be omited if ZK encryption is disabled 
                         ) { progress ->
                             // Progress is handled in background, just log
                             if (progress.isCompleted) {

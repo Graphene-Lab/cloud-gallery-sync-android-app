@@ -80,6 +80,7 @@ class FullScanProcessManagerTest {
         doNothing().whenever(dataCenterCloudManager).uploadFile(
             any(),
             any(),
+            any(),
             any<(FileUploader.ChunkProgress) -> Unit>()
         )
 

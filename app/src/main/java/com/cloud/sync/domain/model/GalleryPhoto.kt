@@ -8,6 +8,7 @@ import android.net.Uri
 data class GalleryPhoto(
     val id: Long,
     val dateAdded: Long, // Timestamp in seconds
+    val lastModifiedSeconds: Long = dateAdded,
     val displayName: String,
     val path: Uri
 )

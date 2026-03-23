@@ -23,8 +23,14 @@ class DataCenterCloudManager @Inject constructor() : ICloudManager {
     override fun uploadFile(
         inputStream: InputStream,
         fileName: String,
+        unixLastWriteTimestampSeconds: Long,
         onProgressUpdate: (FileUploader.ChunkProgress) -> Unit
     ) {
-        FileUploader.startSendFileWithProgressCallback(inputStream, fileName, onProgressUpdate)
+        FileUploader.startSendFileWithProgressCallback(
+            inputStream,
+            fileName,
+            unixLastWriteTimestampSeconds,
+            onProgressUpdate
+        )
     }
 }

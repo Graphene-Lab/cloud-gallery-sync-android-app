@@ -32,6 +32,7 @@ class PhotoLocalDataSource @Inject constructor(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.DATE_ADDED,
+            MediaStore.Images.Media.DATE_MODIFIED,
             MediaStore.Images.Media.DATA
         )
 
@@ -75,6 +76,8 @@ class PhotoLocalDataSource @Inject constructor(
                 val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
                 val dateAdded =
                     cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED))
+                val lastModifiedSeconds =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED))
                 val displayName =
                     cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
                 val contentUri: Uri = ContentUris.withAppendedId(
@@ -86,6 +89,7 @@ class PhotoLocalDataSource @Inject constructor(
                     GalleryPhoto(
                         id = id,
                         dateAdded = dateAdded,
+                        lastModifiedSeconds = lastModifiedSeconds,
                         displayName = displayName,
                         path = contentUri
                     )

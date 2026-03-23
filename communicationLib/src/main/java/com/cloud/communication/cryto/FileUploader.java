@@ -2,6 +2,7 @@ package com.cloud.communication.cryto;
 
 import static com.cloud.communication.cryto.ConversionUtils.bufferToString;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,6 +31,7 @@ public class FileUploader {
     private static final Map<String, byte[]> upload = new ConcurrentHashMap<>();
     private static final Map<String, Integer> chunkParts = new ConcurrentHashMap<>();
     private static final Map<String, Integer> chunkLength = new ConcurrentHashMap<>();
+    private static final Map<String, Long> uploadUnixTimestampByTransport = new ConcurrentHashMap<>();
     private static final Map<String, BiConsumer<String, Integer>> chunkRequest = new ConcurrentHashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -55,6 +57,14 @@ public class FileUploader {
             InputStream inputStream,
             String filename,
             Consumer<ChunkProgress> onProgressUpdate) {
+        startSendFileWithProgressCallback(inputStream, filename, 0L, onProgressUpdate);
+    }
+
+    public static void startSendFileWithProgressCallback(
+            InputStream inputStream,
+            String filename,
+            long unixLastWriteTimestampSeconds,
+            Consumer<ChunkProgress> onProgressUpdate) {
 
         // Store the progress callback
         if (onProgressUpdate != null) {
@@ -62,7 +72,7 @@ public class FileUploader {
         }
 
         // Start the regular upload process
-        startSendFile(inputStream, filename);
+        startSendFile(inputStream, filename, unixLastWriteTimestampSeconds);
     }
 
 
@@ -81,6 +91,7 @@ public class FileUploader {
             String fullPath = file.getName(); // Or construct full path if needed
 
             upload.put(fullPath, fileData);
+            uploadUnixTimestampByTransport.put(fullPath, file.lastModified() / 1000);
 
             // Start sending from chunk 1
             chunkRequestCallback(fullPath, 1);
@@ -91,11 +102,16 @@ public class FileUploader {
     }
 
     public static void startSendFile(InputStream inputStream, String filename) {
+        startSendFile(inputStream, filename, 0L);
+    }
+
+    public static void startSendFile(InputStream inputStream, String filename, long unixLastWriteTimestampSeconds) {
         try (inputStream) {
             try {
                 byte[] fileData = readAllBytesCompat(inputStream);
 
                 upload.put(filename, fileData);
+                uploadUnixTimestampByTransport.put(filename, Math.max(unixLastWriteTimestampSeconds, 0L));
 
                 chunkRequestCallback(filename, 1);
 
@@ -170,7 +186,16 @@ public class FileUploader {
 
 
         String base64Chunk = Base64.getEncoder().encodeToString(chunkData);
-        FileChunk fileChunkObject = new FileChunk(fullFileName, base64Chunk, chunkNumber, parts);
+        Long unixLastWriteTimestamp = chunkNumber == parts
+                ? uploadUnixTimestampByTransport.getOrDefault(fullFileName, 0L)
+                : null;
+        FileChunk fileChunkObject = new FileChunk(
+                fullFileName,
+                base64Chunk,
+                chunkNumber,
+                parts,
+                unixLastWriteTimestamp
+        );
 
         System.out.printf("Uploading chunk %d/%d for file: %s\n", chunkNumber, parts, fullFileName);
 
@@ -221,6 +246,7 @@ public class FileUploader {
             upload.remove(fullFileName);
             chunkLength.remove(fullFileName);
             chunkParts.remove(fullFileName);
+            uploadUnixTimestampByTransport.remove(fullFileName);
             chunkRequest.remove(fullFileName);
             refreshDirectory(fullFileName);
 
@@ -244,19 +270,28 @@ public class FileUploader {
     }
 
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     static class FileChunk {
         // Fields are not public
         private final String fullName;
         private final String data;
         private final int chunkPart;
         private final int totalChunk;
+        private final Long unixLastWriteTimestamp;
 
 
-        public FileChunk(String fullName, String data, int chunkPart, int totalChunk) {
+        public FileChunk(
+                String fullName,
+                String data,
+                int chunkPart,
+                int totalChunk,
+                Long unixLastWriteTimestamp
+        ) {
             this.fullName = fullName;
             this.data = data;
             this.chunkPart = chunkPart;
             this.totalChunk = totalChunk;
+            this.unixLastWriteTimestamp = unixLastWriteTimestamp;
         }
 
         // Jackson will discover these public getters
@@ -278,6 +313,11 @@ public class FileUploader {
         @JsonProperty("TotalChunk")
         public int getTotalChunk() {
             return totalChunk;
+        }
+
+        @JsonProperty("UnixLastWriteTimestamp")
+        public Long getUnixLastWriteTimestamp() {
+            return unixLastWriteTimestamp;
         }
     }
 

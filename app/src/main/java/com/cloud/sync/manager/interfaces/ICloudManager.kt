@@ -13,6 +13,7 @@ interface ICloudManager {
     fun uploadFile(
         inputStream: InputStream,
         fileName: String,
+        unixLastWriteTimestampSeconds: Long,
         onProgressUpdate: (FileUploader.ChunkProgress) -> Unit
     )
 }
