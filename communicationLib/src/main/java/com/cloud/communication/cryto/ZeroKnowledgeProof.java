@@ -86,22 +86,17 @@ public class ZeroKnowledgeProof implements IZeroKnowledgeProof {
                 FileOutputStream outputStream = new FileOutputStream(outputFile)
         ) {
             byte[] inputBuffer = new byte[blockSize];
+            byte[] outputBuffer = new byte[blockSize];
             int cycleCounter = 0;
             int bytesRead;
 
             while ((bytesRead = inputStream.read(inputBuffer, 0, blockSize)) > 0) {
-                long inputBlock = BitConverter.toUInt64(inputBuffer);
-                long keyBlock = BitConverter.toUInt64(
-                        Arrays.copyOfRange(
-                                currentKey,
-                                cycleCounter * blockSize,
-                                cycleCounter * blockSize + blockSize
-                        )
-                );
+                long inputBlock = BitConverter.toUInt64(inputBuffer, 0, bytesRead);
+                long keyBlock = BitConverter.toUInt64(currentKey, cycleCounter * blockSize);
 
                 long outputBlock = inputBlock ^ keyBlock;
-                byte[] outputBytes = BitConverter.getBytes(outputBlock);
-                outputStream.write(outputBytes, 0, bytesRead);
+                BitConverter.writeBytes(outputBlock, outputBuffer, 0, bytesRead);
+                outputStream.write(outputBuffer, 0, bytesRead);
 
                 cycleCounter++;
                 if (cycleCounter >= cyclesPerHash) {
@@ -279,25 +274,16 @@ public class ZeroKnowledgeProof implements IZeroKnowledgeProof {
         byte[] salt = blake2b(key);
         byte[] currentKey = blake2b(salt);
 
-        List<Byte> outputList = new ArrayList<>();
+        byte[] result = new byte[inputBytes.length];
         int cycleCounter = 0;
 
         for (int i = 0; i < inputBytes.length; i += blockSize) {
             int remainingBytes = Math.min(blockSize, inputBytes.length - i);
-            byte[] inputBuffer = new byte[blockSize];
-            System.arraycopy(inputBytes, i, inputBuffer, 0, remainingBytes);
-
-            long inputBlock = BitConverter.toUInt64(inputBuffer);
-            long keyBlock = BitConverter.toUInt64(
-                    Arrays.copyOfRange(currentKey, cycleCounter * blockSize, cycleCounter * blockSize + blockSize)
-            );
+            long inputBlock = BitConverter.toUInt64(inputBytes, i, remainingBytes);
+            long keyBlock = BitConverter.toUInt64(currentKey, cycleCounter * blockSize);
 
             long outputBlock = inputBlock ^ keyBlock;
-            byte[] outputBytes = BitConverter.getBytes(outputBlock);
-
-            for (int j = 0; j < remainingBytes; j++) {
-                outputList.add(outputBytes[j]);
-            }
+            BitConverter.writeBytes(outputBlock, result, i, remainingBytes);
 
             cycleCounter++;
             if (cycleCounter >= cyclesPerHash) {
@@ -306,10 +292,6 @@ public class ZeroKnowledgeProof implements IZeroKnowledgeProof {
             }
         }
 
-        byte[] result = new byte[outputList.size()];
-        for (int i = 0; i < outputList.size(); i++) {
-            result[i] = outputList.get(i);
-        }
         return result;
     }
 
@@ -359,9 +341,26 @@ public class ZeroKnowledgeProof implements IZeroKnowledgeProof {
         }
 
         public static long toUInt64(byte[] bytes) {
-            ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            return buffer.getLong();
+            return toUInt64(bytes, 0, bytes.length);
+        }
+
+        public static long toUInt64(byte[] bytes, int offset) {
+            return toUInt64(bytes, offset, Long.BYTES);
+        }
+
+        public static long toUInt64(byte[] bytes, int offset, int length) {
+            long value = 0;
+            int safeLength = Math.min(length, Long.BYTES);
+            for (int i = 0; i < safeLength; i++) {
+                value |= ((long) bytes[offset + i] & 0xFF) << (i * Byte.SIZE);
+            }
+            return value;
+        }
+
+        public static void writeBytes(long value, byte[] destination, int offset, int length) {
+            for (int i = 0; i < length; i++) {
+                destination[offset + i] = (byte) (value >>> (i * Byte.SIZE));
+            }
         }
     }
 }
