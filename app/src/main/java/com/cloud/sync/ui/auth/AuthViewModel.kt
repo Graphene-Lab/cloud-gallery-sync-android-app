@@ -1,11 +1,10 @@
 package com.cloud.sync.ui.auth
 
-import android.content.SharedPreferences
-import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.common.crypto.ZeroKnowledgeAuthUtils
 import com.cloud.sync.domain.model.CloudSpaceCredentials
+import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.ISessionRepository
 import com.cloud.sync.manager.interfaces.ICloudManager
@@ -22,12 +21,8 @@ class AuthViewModel @Inject constructor(
     private val cloudManager: ICloudManager,
     private val sessionRepository: ISessionRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
-    private val sharedPreferences: SharedPreferences
+    private val appSettingsRepository: IAppSettingsRepository
 ) : ViewModel() {
-
-    companion object {
-        private const val KEY_ENCRYPTION_ENABLED = "is_encryption_enabled"
-    }
 
     private val _uiState = MutableStateFlow(AuthUiState())
 
@@ -104,9 +99,7 @@ class AuthViewModel @Inject constructor(
                     if (zeroKnowledgeMasterKey != null) {
                         cseMasterKeyRepository.saveKey(zeroKnowledgeMasterKey)
                     }
-                    sharedPreferences.edit {
-                        putBoolean(KEY_ENCRYPTION_ENABLED, zeroKnowledgeMasterKey != null)
-                    }
+                    appSettingsRepository.setEncryptionEnabled(zeroKnowledgeMasterKey != null)
                     _uiState.update { it.copy(isAuthenticated = true, isLoading = false) }
                 }.onFailure { exception ->
                     throw exception
@@ -127,7 +120,7 @@ class AuthViewModel @Inject constructor(
      * @return true if user disabled encryption, false otherwise
      */
     private fun isEncryptionSkipped(): Boolean {
-        return !sharedPreferences.getBoolean(KEY_ENCRYPTION_ENABLED, true)
+        return !appSettingsRepository.isEncryptionEnabled()
     }
 
     /**

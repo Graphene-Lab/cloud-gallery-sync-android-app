@@ -229,6 +229,18 @@ class SessionRepository @Inject constructor(
         }
     }
 
+    override fun clearAuthState() {
+        try {
+            encryptedPrefs.edit(commit = true) {
+                remove(SESSION_KEY)
+                remove(CLOUD_CREDENTIALS_KEY)
+            }
+            Log.d(TAG, "Persisted auth state cleared successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear persisted auth state", e)
+        }
+    }
+
     /**
      * Manually clear all session data - useful for logout or when corruption is detected
      */

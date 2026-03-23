@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import com.cloud.sync.common.config.SyncConfig
+import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.SharedPreferences
 
@@ -16,8 +17,6 @@ import android.content.SharedPreferences
 object ConfigModule {
 
     private const val PREFS_NAME = "SyncAppPrefs"
-    private const val KEY_ENCRYPTION_ENABLED = "is_encryption_enabled"
-    private const val KEY_PHOTO_FOLDER_PATH = "photo_folder_path"
 
     @Provides
     @Singleton
@@ -27,10 +26,11 @@ object ConfigModule {
 
     @Provides
     @Singleton
-    fun provideSyncConfig(sharedPreferences: SharedPreferences): SyncConfig {
-        val isEncryptionEnabled = sharedPreferences.getBoolean(KEY_ENCRYPTION_ENABLED, true)
-        val photoFolderPath = sharedPreferences.getString(KEY_PHOTO_FOLDER_PATH, "Photos/") ?: "Photos/"
-        return SyncConfig(isEncryptionEnabled = isEncryptionEnabled, photoFolderPath = photoFolderPath)
+    fun provideSyncConfig(appSettingsRepository: IAppSettingsRepository): SyncConfig {
+        return SyncConfig(
+            isEncryptionEnabled = appSettingsRepository.isEncryptionEnabled(),
+            photoFolderPath = appSettingsRepository.getPhotoFolderPath()
+        )
     }
 
     @Provides

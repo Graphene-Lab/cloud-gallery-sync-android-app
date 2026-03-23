@@ -68,4 +68,9 @@ public class SessionManager {
     public static CompletableFuture<Void> resetSession() {
         return resetSession(0);
     }
+
+    public static void clearSession() {
+        currentSession = new Session();
+        sessionLoaded = true;
+    }
 }

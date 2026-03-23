@@ -11,4 +11,5 @@ interface ISessionRepository {
     suspend fun loadCommunicationSession(): Session?
     suspend fun saveCloudSpaceCredentials(credentials: CloudSpaceCredentials): Int
     suspend fun loadCloudSpaceCredentials(): CloudSpaceCredentials?
+    fun clearAuthState()
 }

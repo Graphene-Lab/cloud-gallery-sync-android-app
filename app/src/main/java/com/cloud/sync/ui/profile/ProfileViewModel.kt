@@ -5,6 +5,8 @@ import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cloud.communication.cryto.SessionManager
+import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.IGalleryRepository
@@ -28,6 +30,7 @@ class ProfileViewModel @Inject constructor(
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
     private val sessionRepository: ISessionRepository,
+    private val appSettingsRepository: IAppSettingsRepository,
     private val syncRepository: ISyncRepository,
     private val galleryRepository: IGalleryRepository,
     private val contentResolver: ContentResolver
@@ -207,5 +210,8 @@ class ProfileViewModel @Inject constructor(
     fun logout() {
         oauthTokenRepository.clearTokens()
         cseMasterKeyRepository.clearKey()
+        sessionRepository.clearAuthState()
+        SessionManager.clearSession()
+        appSettingsRepository.setEncryptionEnabled(true)
     }
 }

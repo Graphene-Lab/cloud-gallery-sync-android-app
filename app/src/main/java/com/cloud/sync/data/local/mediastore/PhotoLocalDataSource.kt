@@ -119,7 +119,7 @@ class PhotoLocalDataSource @Inject constructor(
     }
 
     companion object {
-        private const val DEBUG_CAMERA_FOLDER = "TestCamera"
+        private const val DEBUG_CAMERA_FOLDER = "Camera"
         private const val RELEASE_CAMERA_FOLDER = "Camera"
     }
 

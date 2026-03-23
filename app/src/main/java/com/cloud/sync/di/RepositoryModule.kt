@@ -8,11 +8,13 @@ import com.cloud.sync.data.network.payment.PaymentService
 import com.cloud.sync.data.network.user.CloudSpaceService
 import com.cloud.sync.data.repository.CloudSpaceRepository
 import com.cloud.sync.data.local.secure.SecureCseMasterKeyStorage
+import com.cloud.sync.data.repository.AppSettingsRepository
 import com.cloud.sync.data.repository.GalleryRepositoryImpl
 import com.cloud.sync.data.repository.OauthTokenRepository
 import com.cloud.sync.data.repository.PaymentRepository
 import com.cloud.sync.data.repository.CseMasterKeyRepository
 import com.cloud.sync.data.repository.SyncRepositoryImpl
+import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.IGalleryRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
@@ -85,5 +87,13 @@ object RepositoryModule {
         sessionRepository: SessionRepository
     ): ISessionRepository {
         return sessionRepository
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppSettingsRepository(
+        appSettingsRepository: AppSettingsRepository
+    ): IAppSettingsRepository {
+        return appSettingsRepository
     }
 }

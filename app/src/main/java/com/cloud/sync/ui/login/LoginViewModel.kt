@@ -1,11 +1,11 @@
 package com.cloud.sync.ui.login
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.BuildConfig
+import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import com.cloud.sync.domain.repositroy.IOauthTokenRepository
@@ -25,13 +25,12 @@ class LoginViewModel @Inject constructor(
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val sessionRepository: ISessionRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
-    private val sharedPreferences: SharedPreferences,
+    private val appSettingsRepository: IAppSettingsRepository,
     private val cloudManager: ICloudManager
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "LoginViewModel"
-        private const val KEY_ENCRYPTION_ENABLED = "is_encryption_enabled"
     }
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Loading)
@@ -46,9 +45,11 @@ class LoginViewModel @Inject constructor(
 
     private fun checkAuthStatus() {
         viewModelScope.launch {
-            if (!oauthTokenRepository.getAccessToken()
-                    .isNullOrBlank() && sessionRepository.loadSession() != null
-            ) {
+            val hasSession = sessionRepository.loadSession() != null
+            val hasOauthToken = !oauthTokenRepository.getAccessToken().isNullOrBlank()
+            val hasQrCredentials = sessionRepository.loadCloudSpaceCredentials() != null
+
+            if (hasSession && (hasOauthToken || hasQrCredentials)) {
                 if (BuildConfig.DEBUG) {
                     Log.d(TAG, "checkAuthStatus: Authenticated")
                 }
@@ -133,7 +134,7 @@ class LoginViewModel @Inject constructor(
      * @return true if user disabled encryption, false otherwise
      */
     private fun isEncryptionSkipped(): Boolean {
-        return !sharedPreferences.getBoolean(KEY_ENCRYPTION_ENABLED, true)
+        return !appSettingsRepository.isEncryptionEnabled()
     }
 
     /**

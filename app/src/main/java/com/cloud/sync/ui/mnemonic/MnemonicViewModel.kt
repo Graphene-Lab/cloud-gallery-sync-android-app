@@ -1,10 +1,9 @@
 package com.cloud.sync.ui.mnemonic
 
-import android.content.SharedPreferences
-import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import cash.z.ecc.android.bip39.Mnemonics
 import cash.z.ecc.android.bip39.toSeed
+import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,19 +16,14 @@ import javax.inject.Inject
 @HiltViewModel
 class MnemonicViewModel @Inject constructor(
     private val keyRepository: ICseMasterKeyRepository,
-    private val sharedPreferences: SharedPreferences
+    private val appSettingsRepository: IAppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MnemonicUiState())
     val uiState: StateFlow<MnemonicUiState> = _uiState.asStateFlow()
 
-    companion object {
-        private const val KEY_ENCRYPTION_ENABLED = "is_encryption_enabled"
-    }
-
     init {
-        // Load encryption preference from SharedPreferences
-        val savedEncryptionPreference = sharedPreferences.getBoolean(KEY_ENCRYPTION_ENABLED, true)
+        val savedEncryptionPreference = appSettingsRepository.isEncryptionEnabled()
         _uiState.update { it.copy(isEncryptionEnabled = savedEncryptionPreference) }
     }
 
@@ -49,9 +43,7 @@ class MnemonicViewModel @Inject constructor(
 
     fun setEncryptionEnabled(enabled: Boolean) {
         _uiState.update { it.copy(isEncryptionEnabled = enabled) }
-        sharedPreferences.edit {
-            putBoolean(KEY_ENCRYPTION_ENABLED, enabled)
-        }
+        appSettingsRepository.setEncryptionEnabled(enabled)
     }
 
     fun generateMnemonic(wordCount: Int = 12) {
