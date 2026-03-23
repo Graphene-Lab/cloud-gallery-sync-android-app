@@ -11,3 +11,7 @@ local.properties
 .kotlin/
 application.properties
 /app/src/debug/res/xml/network_security_config.xml
+# Android release signing
+keystore.properties
+*.jks
+*.keystore

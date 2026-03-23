@@ -17,6 +17,22 @@ if (appPropsFile.exists()) {
     appProps.load(FileInputStream(appPropsFile))
 }
 
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(FileInputStream(keystorePropsFile))
+}
+
+val releaseStoreFilePath = keystoreProps.getProperty("storeFile") ?: System.getenv("ANDROID_KEYSTORE_FILE")
+val releaseStorePassword = keystoreProps.getProperty("storePassword") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+val releaseKeyAlias = keystoreProps.getProperty("keyAlias") ?: System.getenv("ANDROID_KEY_ALIAS")
+val releaseKeyPassword = keystoreProps.getProperty("keyPassword") ?: System.getenv("ANDROID_KEY_PASSWORD")
+val hasReleaseSigning =
+    !releaseStoreFilePath.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseKeyAlias.isNullOrBlank() &&
+        !releaseKeyPassword.isNullOrBlank()
+
 android {
     namespace = "com.cloud.sync"
     compileSdk = 35
@@ -33,6 +49,17 @@ android {
         manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.cloud.sync")
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFilePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
@@ -44,6 +71,13 @@ android {
         }
         release {
             isMinifyEnabled = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "Release signing is not configured. Add keystore.properties or ANDROID_KEYSTORE_* env vars."
+                )
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
