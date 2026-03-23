@@ -61,6 +61,13 @@ public class FileUploader {
     }
 
     public static void startSendFileWithProgressCallback(
+            byte[] fileData,
+            String filename,
+            Consumer<ChunkProgress> onProgressUpdate) {
+        startSendFileWithProgressCallback(fileData, filename, 0L, onProgressUpdate);
+    }
+
+    public static void startSendFileWithProgressCallback(
             InputStream inputStream,
             String filename,
             long unixLastWriteTimestampSeconds,
@@ -75,6 +82,19 @@ public class FileUploader {
         startSendFile(inputStream, filename, unixLastWriteTimestampSeconds);
     }
 
+    public static void startSendFileWithProgressCallback(
+            byte[] fileData,
+            String filename,
+            long unixLastWriteTimestampSeconds,
+            Consumer<ChunkProgress> onProgressUpdate) {
+
+        if (onProgressUpdate != null) {
+            progressCallbacks.put(filename, onProgressUpdate);
+        }
+
+        startSendFile(fileData, filename, unixLastWriteTimestampSeconds);
+    }
+
 
     public static void startSendFileAsync(File file) {
         new Thread(() -> startSendFile(file)).start();
@@ -82,6 +102,10 @@ public class FileUploader {
 
     public static void startSendFileAsync(InputStream inputStream, String filename) {
         new Thread(() -> startSendFile(inputStream, filename)).start();
+    }
+
+    public static void startSendFileAsync(byte[] fileData, String filename) {
+        new Thread(() -> startSendFile(fileData, filename)).start();
     }
 
     public static void startSendFile(File file) {
@@ -105,6 +129,10 @@ public class FileUploader {
         startSendFile(inputStream, filename, 0L);
     }
 
+    public static void startSendFile(byte[] fileData, String filename) {
+        startSendFile(fileData, filename, 0L);
+    }
+
     public static void startSendFile(InputStream inputStream, String filename, long unixLastWriteTimestampSeconds) {
         try (inputStream) {
             try {
@@ -121,6 +149,12 @@ public class FileUploader {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void startSendFile(byte[] fileData, String filename, long unixLastWriteTimestampSeconds) {
+        upload.put(filename, fileData);
+        uploadUnixTimestampByTransport.put(filename, Math.max(unixLastWriteTimestampSeconds, 0L));
+        chunkRequestCallback(filename, 1);
     }
 
     private static byte[] readAllBytesCompat(InputStream inputStream) throws IOException {

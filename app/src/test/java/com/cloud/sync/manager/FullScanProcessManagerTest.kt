@@ -77,7 +77,7 @@ class FullScanProcessManagerTest {
         }
 
         // Mock ICloudManager behaviour using Mockito's doNothing
-        doNothing().whenever(dataCenterCloudManager).uploadFile(
+        doNothing().whenever(dataCenterCloudManager).uploadFileBytes(
             any(),
             any(),
             any(),

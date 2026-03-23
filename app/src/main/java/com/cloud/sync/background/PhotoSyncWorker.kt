@@ -19,7 +19,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayInputStream
 import java.io.IOException
 
 @HiltWorker
@@ -121,16 +120,14 @@ class PhotoSyncWorker @AssistedInject constructor(
                     }
 
                     // 4. Upload bytes with the chosen filename (encrypted or original)
-                    ByteArrayInputStream(fileContentToUpload).use { uploadStream ->
-                        dataCenterCloudManager.uploadFile(
-                            uploadStream,
-                            fileNameToUpload,
-                            photo.lastModifiedSeconds //TODO: used for last chunk in ZK encrpytion, can be omited if ZK encryption is disabled 
-                        ) { progress ->
-                            // Progress is handled in background, just log
-                            if (progress.isCompleted) {
-                                println("Worker: Uploaded ${photo.displayName}")
-                            }
+                    dataCenterCloudManager.uploadFileBytes(
+                        fileContentToUpload,
+                        fileNameToUpload,
+                        photo.lastModifiedSeconds
+                    ) { progress ->
+                        // Progress is handled in background, just log
+                        if (progress.isCompleted) {
+                            println("Worker: Uploaded ${photo.displayName}")
                         }
                     }
                     lastSyncedTimestamp = photo.dateAdded

@@ -16,4 +16,11 @@ interface ICloudManager {
         unixLastWriteTimestampSeconds: Long,
         onProgressUpdate: (FileUploader.ChunkProgress) -> Unit
     )
+
+    fun uploadFileBytes(
+        fileBytes: ByteArray,
+        fileName: String,
+        unixLastWriteTimestampSeconds: Long,
+        onProgressUpdate: (FileUploader.ChunkProgress) -> Unit
+    )
 }

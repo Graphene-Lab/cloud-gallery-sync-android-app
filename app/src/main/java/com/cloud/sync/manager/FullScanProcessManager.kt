@@ -19,7 +19,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayInputStream
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
@@ -171,24 +170,22 @@ class FullScanProcessManager @Inject constructor(
 
 
                             // 4. Upload bytes with the chosen filename (encrypted or original)
-                            ByteArrayInputStream(fileContentToUpload).use { uploadStream ->
-                                dataCenterCloudManager.uploadFile(
-                                    uploadStream,
-                                    fileNameToUpload,
-                                    photo.lastModifiedSeconds
-                                ) { progress ->
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        if (progress.isCompleted) {
-                                            PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
-                                            SyncStatusManager.updateSuccessfulSyncPhotosCount()
-                                            SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
-                                        } else {
-                                            PhotoSyncStatusManager.updatePhotoProgress(
-                                                filename = photo.displayName, // Show original name in UI
-                                                currentChunk = progress.currentChunk,
-                                                totalChunks = progress.totalChunks
-                                            )
-                                        }
+                            dataCenterCloudManager.uploadFileBytes(
+                                fileContentToUpload,
+                                fileNameToUpload,
+                                photo.lastModifiedSeconds
+                            ) { progress ->
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    if (progress.isCompleted) {
+                                        PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
+                                        SyncStatusManager.updateSuccessfulSyncPhotosCount()
+                                        SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
+                                    } else {
+                                        PhotoSyncStatusManager.updatePhotoProgress(
+                                            filename = photo.displayName, // Show original name in UI
+                                            currentChunk = progress.currentChunk,
+                                            totalChunks = progress.totalChunks
+                                        )
                                     }
                                 }
                             }

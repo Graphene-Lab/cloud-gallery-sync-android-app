@@ -167,9 +167,9 @@ class PhotoSyncWorkerTest {
                 ByteArrayInputStream(byteArrayOf(1, 2, 3, 4))
             }.`when`(contentResolver).openInputStream(any())
 
-            // Mock dataCenterCloudManager.uploadFile to accept any input stream and progress callback
+            // Mock dataCenterCloudManager.uploadFileBytes to accept any payload and progress callback
             doAnswer { invocation ->
-                val progressCallback = invocation.getArgument<(com.cloud.communication.cryto.FileUploader.ChunkProgress) -> Unit>(2)
+                val progressCallback = invocation.getArgument<(com.cloud.communication.cryto.FileUploader.ChunkProgress) -> Unit>(3)
                 // Simulate completion
                 progressCallback.invoke(
                     com.cloud.communication.cryto.FileUploader.ChunkProgress(
@@ -180,7 +180,7 @@ class PhotoSyncWorkerTest {
                     )
                 )
                 null
-            }.`when`(dataCenterCloudManager).uploadFile(any(), any(), any(), any())
+            }.`when`(dataCenterCloudManager).uploadFileBytes(any(), any(), any(), any())
 
             // --- THE FIX: Capture Snapshots, Not References ---
             // Create a list to hold deep copies of the arguments at the time of invocation.
