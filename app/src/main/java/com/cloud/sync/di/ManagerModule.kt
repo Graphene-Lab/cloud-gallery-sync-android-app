@@ -1,6 +1,8 @@
 package com.cloud.sync.di
 
+import com.cloud.sync.manager.ExplorerAppManager
 import com.cloud.sync.manager.interfaces.IOAuthManager
+import com.cloud.sync.manager.interfaces.IExplorerAppManager
 import com.cloud.sync.manager.interfaces.IPermissionsManager
 import com.cloud.sync.manager.interfaces.IQRScanner
 import com.cloud.sync.manager.OAuthManager
@@ -35,4 +37,10 @@ abstract class ManagerModule {
     abstract fun bindAuthManager(
         impl: OAuthManager
     ): IOAuthManager
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindExplorerAppManager(
+        impl: ExplorerAppManager
+    ): IExplorerAppManager
 }

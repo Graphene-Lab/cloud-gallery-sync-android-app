@@ -12,6 +12,7 @@ import com.cloud.sync.common.PhotoSyncStatusManager
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.manager.PermissionSet
 import com.cloud.sync.manager.interfaces.IBackgroundSyncManager
+import com.cloud.sync.manager.interfaces.IExplorerAppManager
 import com.cloud.sync.manager.interfaces.IPermissionsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SyncViewModel @Inject constructor(
     private val backgroundSyncManager: IBackgroundSyncManager,
-    private val permissionsManager: IPermissionsManager
+    private val permissionsManager: IPermissionsManager,
+    private val explorerAppManager: IExplorerAppManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SyncUiState())
@@ -95,6 +97,7 @@ class SyncViewModel @Inject constructor(
         if (screenStarted) return
         screenStarted = true
         AppStartupTrace.mark("SyncViewModel.onScreenStarted")
+        refreshExplorerInstallState()
 
         backgroundSyncManager.getPeriodicSyncWorkInfoFlow()
             .onEach { isScheduled ->
@@ -149,6 +152,30 @@ class SyncViewModel @Inject constructor(
 
     fun stopFullScan() {
         backgroundSyncManager.stopFullScanService()
+    }
+
+    fun refreshExplorerInstallState() {
+        _uiState.update {
+            it.copy(
+                isExplorerInstalled = explorerAppManager.isExplorerInstalled()
+            )
+        }
+    }
+
+    fun onExplorerButtonClicked() {
+        val isExplorerInstalled = explorerAppManager.isExplorerInstalled()
+        _uiState.update {
+            it.copy(
+                isExplorerInstalled = isExplorerInstalled
+            )
+        }
+
+        if (isExplorerInstalled) {
+            explorerAppManager.openExplorer()
+        } else {
+            explorerAppManager.openExplorerDownloadPage()
+        }
+        refreshExplorerInstallState()
     }
 
     fun setPermissionLauncher(launcher: ActivityResultLauncher<Array<String>>) {
