@@ -32,7 +32,9 @@ class BackgroundSyncManager @Inject constructor(
     private val syncRepository: ISyncRepository
 ) : IBackgroundSyncManager {
 
-    private val workManager: WorkManager = WorkManager.getInstance(context)
+    private val workManager: WorkManager by lazy(LazyThreadSafetyMode.NONE) {
+        WorkManager.getInstance(context)
+    }
     private val periodicWorkTag = "periodic-photo-sync"
 
     override suspend fun schedulePeriodicSync() {

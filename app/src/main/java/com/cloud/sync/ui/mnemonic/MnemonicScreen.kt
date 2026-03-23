@@ -28,9 +28,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun MnemonicScreen(
     mnemonicViewModel: MnemonicViewModel = hiltViewModel(),
+    onScreenDisplayed: (() -> Unit)? = null,
     onMnemonicConfirmed: () -> Unit
 ) {
     val uiState by mnemonicViewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        onScreenDisplayed?.invoke()
+    }
 
     LaunchedEffect(uiState.isKeySaved) {
         if (uiState.isKeySaved) onMnemonicConfirmed()

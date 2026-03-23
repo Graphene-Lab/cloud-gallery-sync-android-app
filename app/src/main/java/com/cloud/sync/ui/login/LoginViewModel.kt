@@ -8,20 +8,20 @@ import com.cloud.sync.BuildConfig
 import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
-import com.cloud.sync.domain.repositroy.IOauthTokenRepository
 import com.cloud.sync.domain.repositroy.ISessionRepository
 import com.cloud.sync.manager.OAuthManager
 import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val oAuthManager: OAuthManager,
-    private val oauthTokenRepository: IOauthTokenRepository,
     private val cloudSpaceRepository: ICloudSpaceRepository,
     private val sessionRepository: ISessionRepository,
     private val cseMasterKeyRepository: ICseMasterKeyRepository,
@@ -33,33 +33,12 @@ class LoginViewModel @Inject constructor(
         private const val TAG = "LoginViewModel"
     }
 
-    private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Loading)
+    private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Unauthenticated)
     val uiState = _uiState.asStateFlow()
 
     init {
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "init login view model")
-        }
-        checkAuthStatus()
-    }
-
-    private fun checkAuthStatus() {
-        viewModelScope.launch {
-            val hasSession = sessionRepository.loadSession() != null
-            val hasOauthToken = !oauthTokenRepository.getAccessToken().isNullOrBlank()
-            val hasQrCredentials = sessionRepository.loadCloudSpaceCredentials() != null
-
-            if (hasSession && (hasOauthToken || hasQrCredentials)) {
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "checkAuthStatus: Authenticated")
-                }
-                _uiState.value = LoginUiState.Authenticated
-            } else {
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "checkAuthStatus: Unauthenticated")
-                }
-                _uiState.value = LoginUiState.Unauthenticated
-            }
         }
     }
 
@@ -97,7 +76,8 @@ class LoginViewModel @Inject constructor(
                         cloudManager.pair(credentials.qrEncrypted, credentials.pin).onSuccess {
                             Log.d(TAG, "handleAuthResult: Connected to cloud")
 
-                            _uiState.value = LoginUiState.Authenticated
+                            _uiState.value =
+                                LoginUiState.Authenticated(resolveEncryptionSetupComplete())
                         }
                             .onFailure { exception ->
                                 Log.w(TAG, "handleAuthResult: Failed to connect to cloud", exception)
@@ -142,7 +122,7 @@ class LoginViewModel @Inject constructor(
      * @return true if a master key exists in secure storage
      */
     private fun isCseMasterKeyGenerated(): Boolean {
-        return cseMasterKeyRepository.getKey() != null
+        return cseMasterKeyRepository.hasKey()
     }
 
     /**
@@ -153,7 +133,7 @@ class LoginViewModel @Inject constructor(
      *
      * @return true if encryption setup is complete (can skip mnemonic screen)
      */
-    fun isEncryptionSetupComplete(): Boolean {
-        return isEncryptionSkipped() || isCseMasterKeyGenerated()
+    private suspend fun resolveEncryptionSetupComplete(): Boolean = withContext(Dispatchers.IO) {
+        isEncryptionSkipped() || isCseMasterKeyGenerated()
     }
 }

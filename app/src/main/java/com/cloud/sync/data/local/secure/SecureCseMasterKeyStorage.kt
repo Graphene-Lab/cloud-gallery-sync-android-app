@@ -9,7 +9,9 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 
 @Singleton
-class SecureCseMasterKeyStorage @Inject constructor(@ApplicationContext context: Context) {
+class SecureCseMasterKeyStorage @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     companion object {
         private const val PREF_FILE_NAME = "secure_app_settings"
@@ -17,15 +19,19 @@ class SecureCseMasterKeyStorage @Inject constructor(@ApplicationContext context:
     }
 
     // This generates/retrieves the master key from Android KeyStore that EncryptedSharedPreferences uses internally.
-    private val ep_masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val epMasterKeyAlias by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    }
 
-    private val sharedPreferences = EncryptedSharedPreferences.create(
-        PREF_FILE_NAME,
-        ep_masterKeyAlias, // This references the KeyStore-managed master key for EncryptedSharedPreferences itself
-        context,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val sharedPreferences by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        EncryptedSharedPreferences.create(
+            PREF_FILE_NAME,
+            epMasterKeyAlias, // This references the KeyStore-managed master key for EncryptedSharedPreferences itself
+            context,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
 
     fun saveKey(key: ByteArray) {
         val encodedKey = android.util.Base64.encodeToString(key, android.util.Base64.NO_WRAP)

@@ -8,6 +8,7 @@ jacksonDatabind = "2.17.1"
 junitBom = "5.10.2"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
+coreSplashscreen = "1.0.1"
 
 #-----------------------------------------------------------------------------------------
 # Jetpack
@@ -50,6 +51,7 @@ bouncyCastle = "1.70"
 # AndroidX Core & AppCompat
 #-----------------------------------------------------------------------------------------
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 
 #-----------------------------------------------------------------------------------------
 # Jetpack Compose

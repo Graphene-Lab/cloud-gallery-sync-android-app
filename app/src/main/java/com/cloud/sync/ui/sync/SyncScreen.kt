@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SyncScreen(
     syncViewModel: SyncViewModel = hiltViewModel(),
+    onScreenDisplayed: (() -> Unit)? = null,
     onNavigateToProfile: () -> Unit
 ) {
     val context = LocalContext.current
@@ -45,6 +47,9 @@ fun SyncScreen(
 
     // One-time launcher setup
     LaunchedEffect(Unit) {
+        onScreenDisplayed?.invoke()
+        withFrameNanos { }
+        syncViewModel.onScreenStarted()
         syncViewModel.setPermissionLauncher(permissionLauncher)
     }
     Scaffold(

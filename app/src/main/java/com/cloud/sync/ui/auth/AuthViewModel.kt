@@ -128,7 +128,7 @@ class AuthViewModel @Inject constructor(
      * @return true if a master key exists in secure storage
      */
     private fun isCseMasterKeyGenerated(): Boolean {
-        return cseMasterKeyRepository.getKey() != null
+        return cseMasterKeyRepository.hasKey()
     }
 
     /**

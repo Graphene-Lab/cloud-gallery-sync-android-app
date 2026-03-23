@@ -37,7 +37,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Test">
+            android:theme="@style/Theme.Sync.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

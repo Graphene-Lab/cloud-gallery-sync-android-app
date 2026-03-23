@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cloud.sync.common.AppStartupTrace
 import com.cloud.sync.common.PhotoSyncStatusManager
 import com.cloud.sync.common.SyncStatusManager
 import com.cloud.sync.manager.PermissionSet
@@ -30,15 +31,9 @@ class SyncViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(SyncUiState())
     val uiState: StateFlow<SyncUiState> = _uiState.asStateFlow()
+    private var screenStarted = false
 
     init {
-        // Observe background worker status from the manager
-        backgroundSyncManager.getPeriodicSyncWorkInfoFlow()
-            .onEach { isScheduled ->
-                _uiState.update { it.copy(isBackgroundSyncScheduled = isScheduled) }
-            }
-            .launchIn(viewModelScope) // Collects the flow as long as the ViewModel is active
-
         // Observe full scan progress from the service via SyncStatusManager
         viewModelScope.launch {
             SyncStatusManager.isSyncing.collect { isSyncing ->
@@ -94,6 +89,18 @@ class SyncViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onScreenStarted() {
+        if (screenStarted) return
+        screenStarted = true
+        AppStartupTrace.mark("SyncViewModel.onScreenStarted")
+
+        backgroundSyncManager.getPeriodicSyncWorkInfoFlow()
+            .onEach { isScheduled ->
+                _uiState.update { it.copy(isBackgroundSyncScheduled = isScheduled) }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onFromNowSyncToggled(isEnabled: Boolean) {

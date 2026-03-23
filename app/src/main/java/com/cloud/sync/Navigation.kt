@@ -16,14 +16,16 @@ import com.cloud.sync.ui.scan.ScanScreen
 
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    startDestination: String,
+    onInitialDestinationDisplayed: () -> Unit
+) {
     val navController = rememberNavController()
 
 
     NavHost(
         navController = navController,
-//        startDestination = if (BuildConfig.DEBUG) "mnemonic" else "login"
-        startDestination = "login"
+        startDestination = startDestination
     ) {
 
         composable("auth") {
@@ -84,6 +86,11 @@ fun AppNavigation() {
 //            deepLinks = listOf(navDeepLink { uriPattern = "test://debug/sync-screen/{content}" }),
         ) { backStackEntry ->
             SyncScreen(
+                onScreenDisplayed = if (startDestination == "sync") {
+                    onInitialDestinationDisplayed
+                } else {
+                    null
+                },
                 onNavigateToProfile = {
                     navController.navigate("profile")
                 }
@@ -92,6 +99,11 @@ fun AppNavigation() {
 
         composable("login") {
             LoginScreen(
+                onScreenDisplayed = if (startDestination == "login") {
+                    onInitialDestinationDisplayed
+                } else {
+                    null
+                },
                 onLoginAndCseKeyGenerated = {
                     Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
                     navController.navigate("sync") {
@@ -137,13 +149,20 @@ fun AppNavigation() {
         }
 
         composable("mnemonic") {
-            MnemonicScreen(onMnemonicConfirmed = {
-                navController.navigate("sync") {
-                    popUpTo("mnemonic") {
-                        inclusive = true
+            MnemonicScreen(
+                onScreenDisplayed = if (startDestination == "mnemonic") {
+                    onInitialDestinationDisplayed
+                } else {
+                    null
+                },
+                onMnemonicConfirmed = {
+                    navController.navigate("sync") {
+                        popUpTo("mnemonic") {
+                            inclusive = true
+                        }
                     }
                 }
-            })
+            )
         }
     }
 }

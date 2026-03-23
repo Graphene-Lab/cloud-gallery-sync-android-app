@@ -25,15 +25,21 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onLoginAndCseKeyGenerated: () -> Unit,
     onNavigateToScan: () -> Unit,
+    onScreenDisplayed: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(Unit) {
+        onScreenDisplayed?.invoke()
+    }
+
     // Handle navigation when authenticated
     LaunchedEffect(uiState) {
-        if (uiState is LoginUiState.Authenticated) {
+        val authenticatedState = uiState as? LoginUiState.Authenticated
+        if (authenticatedState != null) {
             Log.d(TAG, "Authentication successful, navigating to main screen")
-            if (viewModel.isEncryptionSetupComplete()) {
+            if (authenticatedState.isEncryptionSetupComplete) {
                 onLoginAndCseKeyGenerated()
             } else {
                 onLoginSuccess()

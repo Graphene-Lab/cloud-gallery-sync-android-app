@@ -156,6 +156,15 @@ class SessionRepository @Inject constructor(
         }
     }
 
+    override suspend fun hasSession(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            encryptedPrefs.contains(SESSION_KEY)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to check session presence", e)
+            false
+        }
+    }
+
     override suspend fun loadCommunicationSession(): com.cloud.communication.cryto.Session? = withContext(Dispatchers.IO) {
         try {
             val sessionData = loadSession() ?: return@withContext null
@@ -226,6 +235,15 @@ class SessionRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load cloud space credentials", e)
             null
+        }
+    }
+
+    override suspend fun hasCloudSpaceCredentials(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            encryptedPrefs.contains(CLOUD_CREDENTIALS_KEY)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to check cloud credentials presence", e)
+            false
         }
     }
 
