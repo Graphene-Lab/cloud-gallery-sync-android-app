@@ -62,6 +62,9 @@ class FullScanService : Service() {
      * Initiates the full scan logic and starts observing processor status updates.
      */
     private fun startServiceLogic() {
+        // clear old scan process
+        SyncStatusManager.resetSyncSession()
+
         // Start foreground notification immediately
         val initialNotification = createNotification("Starting full scan...")
         startForeground(NOTIFICATION_ID, initialNotification)

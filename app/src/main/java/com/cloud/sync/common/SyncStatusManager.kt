@@ -34,6 +34,15 @@ object SyncStatusManager {
         _noPhotosFoundToSync.value = noPhotosFoundToSync
     }
 
+    fun resetSyncSession() {
+        _isSyncing.value = false
+        _successfulSyncPhotosCount.value = 0
+        _failedSyncPhotosCount.value = 0
+        _discoveredPhotosCount.value = 0
+        _noPhotosFoundToSync.value = false
+        _totalProcessedPhotosCount = 0
+    }
+
     fun turnOfSyncStatusBasedOnIfAllPhotosFetched() {
         if (_discoveredPhotosCount.value <= (_successfulSyncPhotosCount.value + _failedSyncPhotosCount.value))
             _isSyncing.value = false
@@ -50,6 +59,12 @@ object SyncStatusManager {
         _failedSyncPhotosCount.value = count
         _totalProcessedPhotosCount =
             _successfulSyncPhotosCount.value + _failedSyncPhotosCount.value;
+    }
+
+    fun incrementFailedSyncPhotosCount() {
+        _failedSyncPhotosCount.value++
+        _totalProcessedPhotosCount =
+            _successfulSyncPhotosCount.value + _failedSyncPhotosCount.value
     }
 
     fun increaseDiscoveredPhotosCount(countToIncrease: Int) {
