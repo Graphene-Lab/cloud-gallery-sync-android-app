@@ -34,7 +34,7 @@ public class RequestManager {
 
     private static final List<Pair<Integer, byte[]>> spooler = new ArrayList<>();
     private static final AtomicInteger concurrentRequest = new AtomicInteger(0);
-    private static final int maxConcurrentRequest = 5;
+    private static final int maxConcurrentRequest = 3;
     private static final boolean DEBUG_CONCURRENCY_LOGS = true;
     private static final OkHttpClient client = new OkHttpClient();
     private static ExecutorService executor = Executors.newCachedThreadPool();
