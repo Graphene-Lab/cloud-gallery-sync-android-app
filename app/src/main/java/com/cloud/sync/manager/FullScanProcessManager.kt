@@ -6,6 +6,7 @@ import com.cloud.communication.cryto.IZeroKnowledgeProof
 import com.cloud.sync.BuildConfig
 import com.cloud.sync.common.PhotoSyncStatusManager
 import com.cloud.sync.common.SyncStatusManager
+import com.cloud.sync.common.UploadTimeouts
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
 import com.cloud.sync.domain.model.TimeInterval
@@ -19,13 +20,17 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
 
 /**
  * Concrete implementation of [com.cloud.sync.manager.interfaces.IFullScanProcessManager].
@@ -136,7 +141,7 @@ class FullScanProcessManager @Inject constructor(
 
         // Process photos in parallel batches
         photos.chunked(batchSize).forEach { batch ->
-            val deferredResults = batch.mapIndexed { index, photo ->
+            val deferredResults = batch.map { photo ->
                 async {
                     concurrentLimit.withPermit {
                         context.ensureActive()
@@ -170,28 +175,79 @@ class FullScanProcessManager @Inject constructor(
 
 
                             // 4. Upload bytes with the chosen filename (encrypted or original)
-                            dataCenterCloudManager.uploadFileBytes(
-                                fileContentToUpload,
-                                fileNameToUpload,
-                                photo.lastModifiedSeconds
-                            ) { progress ->
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    if (progress.isCompleted) {
-                                        PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
-                                        SyncStatusManager.updateSuccessfulSyncPhotosCount()
-                                        SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
-                                    } else {
-                                        PhotoSyncStatusManager.updatePhotoProgress(
-                                            filename = photo.displayName, // Show original name in UI
-                                            currentChunk = progress.currentChunk,
-                                            totalChunks = progress.totalChunks
-                                        )
+                            val timeoutMs = UploadTimeouts.forSizeBytes(fileContentToUpload.size)
+                            val uploadCompleted = withTimeoutOrNull(timeoutMs) {
+                                suspendCancellableCoroutine { continuation ->
+                                    val finished = AtomicBoolean(false)
+                                    dataCenterCloudManager.uploadFileBytes(
+                                        fileContentToUpload,
+                                        fileNameToUpload,
+                                        photo.lastModifiedSeconds
+                                    ) { progress ->
+                                        if (progress.hasError) {
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                PhotoSyncStatusManager.updatePhotoProgress(
+                                                    filename = photo.displayName,
+                                                    currentChunk = progress.currentChunk,
+                                                    totalChunks = progress.totalChunks,
+                                                    hasError = true,
+                                                    errorMessage = progress.errorMessage ?: "Upload failed"
+                                                )
+                                                SyncStatusManager.incrementFailedSyncPhotosCount()
+                                                SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
+                                            }
+                                            if (finished.compareAndSet(false, true) && continuation.isActive) {
+                                                continuation.resume(Unit)
+                                            }
+                                        } else if (progress.isCompleted) {
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                PhotoSyncStatusManager.markPhotoCompleted(photo.displayName)
+                                                SyncStatusManager.updateSuccessfulSyncPhotosCount()
+                                                SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
+                                            }
+                                            if (finished.compareAndSet(false, true) && continuation.isActive) {
+                                                continuation.resume(Unit)
+                                            }
+                                        } else {
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                PhotoSyncStatusManager.updatePhotoProgress(
+                                                    filename = photo.displayName, // Show original name in UI
+                                                    currentChunk = progress.currentChunk,
+                                                    totalChunks = progress.totalChunks
+                                                )
+                                            }
+                                        }
                                     }
+                                }
+                            }
+
+                            if (uploadCompleted == null) {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    PhotoSyncStatusManager.updatePhotoProgress(
+                                        filename = photo.displayName,
+                                        currentChunk = 0,
+                                        totalChunks = 0,
+                                        hasError = true,
+                                        errorMessage = "Upload timed out waiting for completion callback"
+                                    )
+                                    SyncStatusManager.incrementFailedSyncPhotosCount()
+                                    SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
                                 }
                             }
                             photo.dateAdded // Return timestamp for batch tracking
                         } catch (e: Exception) {
-                            Log.e("PhotoSync", "Failed to sync ${photo.displayName}", e)
+                            Log.e("FullScanProcessManager", "Failed to sync ${photo.displayName}", e)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                PhotoSyncStatusManager.updatePhotoProgress(
+                                    filename = photo.displayName,
+                                    currentChunk = 0,
+                                    totalChunks = 0,
+                                    hasError = true,
+                                    errorMessage = e.message ?: "Upload failed"
+                                )
+                                SyncStatusManager.incrementFailedSyncPhotosCount()
+                                SyncStatusManager.turnOfSyncStatusBasedOnIfAllPhotosFetched()
+                            }
                             photo.dateAdded
                         }
                     }

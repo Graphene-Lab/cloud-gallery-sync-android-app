@@ -2,10 +2,12 @@ package com.cloud.sync.background
 
 import android.content.Context
 import android.content.ContentResolver
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.cloud.communication.cryto.IZeroKnowledgeProof
+import com.cloud.sync.common.UploadTimeouts
 import com.cloud.sync.common.config.SyncConfig
 import com.cloud.sync.domain.model.GalleryPhoto
 import com.cloud.sync.domain.repositroy.IGalleryRepository
@@ -15,11 +17,14 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
 
 @HiltWorker
 class PhotoSyncWorker @AssistedInject constructor(
@@ -32,6 +37,9 @@ class PhotoSyncWorker @AssistedInject constructor(
     private val zeroKnowledgeProof: IZeroKnowledgeProof?,
     private val dataCenterCloudManager: ICloudManager
 ) : CoroutineWorker(appContext, workerParams) {
+    companion object {
+        private const val TAG = "PhotoSyncWorker";
+    }
 
     override suspend fun doWork(): Result {
         println("Worker: Starting periodic 'From Now' sync check.")
@@ -120,15 +128,37 @@ class PhotoSyncWorker @AssistedInject constructor(
                     }
 
                     // 4. Upload bytes with the chosen filename (encrypted or original)
-                    dataCenterCloudManager.uploadFileBytes(
-                        fileContentToUpload,
-                        fileNameToUpload,
-                        photo.lastModifiedSeconds
-                    ) { progress ->
-                        // Progress is handled in background, just log
-                        if (progress.isCompleted) {
-                            println("Worker: Uploaded ${photo.displayName}")
+                    val uploadCompleted = withTimeoutOrNull(
+                        UploadTimeouts.forSizeBytes(fileContentToUpload.size)
+                    ) {
+                        suspendCancellableCoroutine { continuation ->
+                            val finished = AtomicBoolean(false)
+                            dataCenterCloudManager.uploadFileBytes(
+                                fileContentToUpload,
+                                fileNameToUpload,
+                                photo.lastModifiedSeconds
+                            ) { progress ->
+                                // Progress is handled in background, just log
+                                if (progress.hasError) {
+                                    Log.w(
+                                        TAG,
+                                        "Worker: Failed upload callback for ${photo.displayName}: " +
+                                            (progress.errorMessage ?: "Unknown upload error")
+                                    )
+                                    if (finished.compareAndSet(false, true) && continuation.isActive) {
+                                        continuation.resume(Unit)
+                                    }
+                                } else if (progress.isCompleted) {
+                                    Log.d(TAG, "Worker: Completed upload for ${photo.displayName}")
+                                    if (finished.compareAndSet(false, true) && continuation.isActive) {
+                                        continuation.resume(Unit)
+                                    }
+                                }
+                            }
                         }
+                    }
+                    if (uploadCompleted == null) {
+                        println("Worker: Upload timed out for ${photo.displayName}")
                     }
                     lastSyncedTimestamp = photo.dateAdded
                     photosInBatch++

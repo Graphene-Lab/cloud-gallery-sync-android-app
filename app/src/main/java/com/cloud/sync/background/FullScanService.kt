@@ -27,6 +27,7 @@ class FullScanService : Service() {
         const val ACTION_STOP = "ACTION_STOP"
         private const val NOTIFICATION_CHANNEL_ID = "FullScanChannel"
         private const val NOTIFICATION_ID = 1
+        private const val TAG = "FullScanService";
     }
 
     override fun onCreate() {
@@ -133,6 +134,17 @@ class FullScanService : Service() {
                 return
             }
 
+            val discovered = SyncStatusManager.discoveredPhotosCount.value
+            val processed =
+                SyncStatusManager.successfulSyncPhotosCount.value + SyncStatusManager.failedSyncPhotosCount.value
+            if (discovered > processed) {
+                Log.i(
+                    TAG,
+                    "Full scan processing finished with incomplete counters. discovered=$discovered, processed=$processed. Forcing sync stop."
+                )
+            }
+            SyncStatusManager.updateSyncStatus(false)
+
         } catch (e: Exception) {
             // Re-throw CancellationException to propagate cancellation correctly.
             if (e is CancellationException) throw e
@@ -164,6 +176,7 @@ class FullScanService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        SyncStatusManager.updateSyncStatus(false)
         notificationManager.cancel(NOTIFICATION_ID) // for reliable notification cancellation
         serviceScope.cancel() // Cancel all coroutines when the service is destroyed.
     }

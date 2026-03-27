@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -26,6 +30,8 @@ import java.util.function.Consumer;
 public class FileUploader {
 
     private static final int CHUNK_SIZE = 1024 * 1024; // 1MB
+    private static final long CHUNK_ACK_TIMEOUT_MS = 30_000L;
+    private static final int MAX_CHUNK_ACK_RETRIES = 3;
 
     // Internal state
     private static final Map<String, byte[]> upload = new ConcurrentHashMap<>();
@@ -33,7 +39,12 @@ public class FileUploader {
     private static final Map<String, Integer> chunkLength = new ConcurrentHashMap<>();
     private static final Map<String, Long> uploadUnixTimestampByTransport = new ConcurrentHashMap<>();
     private static final Map<String, BiConsumer<String, Integer>> chunkRequest = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> inFlightChunkByFile = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> chunkAckRetryCountByFile = new ConcurrentHashMap<>();
+    private static final Map<String, ScheduledFuture<?>> chunkAckTimeoutTasks = new ConcurrentHashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ScheduledExecutorService timeoutScheduler =
+            Executors.newSingleThreadScheduledExecutor();
 
     private static final Map<String, Consumer<ChunkProgress>> progressCallbacks = new ConcurrentHashMap<>();
 
@@ -43,12 +54,27 @@ public class FileUploader {
         public final int currentChunk;
         public final int totalChunks;
         public final boolean isCompleted;
+        public final boolean hasError;
+        public final String errorMessage;
 
         public ChunkProgress(String filename, int currentChunk, int totalChunks, boolean isCompleted) {
+            this(filename, currentChunk, totalChunks, isCompleted, false, null);
+        }
+
+        public ChunkProgress(
+                String filename,
+                int currentChunk,
+                int totalChunks,
+                boolean isCompleted,
+                boolean hasError,
+                String errorMessage
+        ) {
             this.filename = filename;
             this.currentChunk = currentChunk;
             this.totalChunks = totalChunks;
             this.isCompleted = isCompleted;
+            this.hasError = hasError;
+            this.errorMessage = errorMessage;
         }
     }
 
@@ -218,6 +244,7 @@ public class FileUploader {
             progressCallback.accept(progress);
         }
 
+        scheduleChunkAckTimeout(fullFileName, chunkNumber);
 
         String base64Chunk = Base64.getEncoder().encodeToString(chunkData);
         Long unixLastWriteTimestamp = chunkNumber == parts
@@ -247,7 +274,7 @@ public class FileUploader {
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Handle serialization error, maybe abort the upload
+            failUpload(fullFileName, "Failed to serialize/send chunk payload: " + e.getMessage());
         }
 
     }
@@ -255,17 +282,35 @@ public class FileUploader {
     public static void handleServerUploadResponse(List<byte[]> parts) {
         // Server responds with: "fileName\tcurrentChunkNumber"
 
-
-        String[] partsStr = bufferToString(parts.get(0)).split("\t");
-        if (partsStr.length != 2) return;
-
-        String fullFileName = partsStr[0];
-        int nextChunkNumber = Integer.parseInt(partsStr[1]) + 1;
-        int totalChunks = chunkParts.getOrDefault(fullFileName, -1);
-        if (totalChunks == -1) {
-            System.out.println("Upload state missing for " + fullFileName);
+        if (parts == null || parts.isEmpty()) {
             return;
         }
+
+        String responseText = bufferToString(parts.get(0));
+        int separator = responseText.lastIndexOf('\t');
+        if (separator <= 0 || separator >= responseText.length() - 1) {
+            System.out.println("Invalid upload ACK payload: " + responseText);
+            return;
+        }
+
+        String fullFileName = responseText.substring(0, separator);
+        int nextChunkNumber;
+        try {
+            nextChunkNumber = Integer.parseInt(responseText.substring(separator + 1)) + 1;
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid upload ACK chunk index: " + responseText);
+            return;
+        }
+        int totalChunks = chunkParts.getOrDefault(fullFileName, -1);
+        if (totalChunks == -1) {
+            // Late ACK for already-cleaned upload (e.g., after retry race). Safe to ignore.
+            System.out.println("Ignoring stale upload ACK for " + fullFileName);
+            return;
+        }
+
+        cancelChunkAckTimeout(fullFileName);
+        inFlightChunkByFile.remove(fullFileName);
+        chunkAckRetryCountByFile.remove(fullFileName);
 
         if (nextChunkNumber > totalChunks) {
             System.out.println("Upload completed for " + fullFileName);
@@ -274,14 +319,9 @@ public class FileUploader {
             if (progressCallback != null) {
                 ChunkProgress progress = new ChunkProgress(fullFileName, totalChunks, totalChunks, true);
                 progressCallback.accept(progress);
-                progressCallbacks.remove(fullFileName); // Clean up callback
             }
 
-            upload.remove(fullFileName);
-            chunkLength.remove(fullFileName);
-            chunkParts.remove(fullFileName);
-            uploadUnixTimestampByTransport.remove(fullFileName);
-            chunkRequest.remove(fullFileName);
+            clearUploadState(fullFileName);
             refreshDirectory(fullFileName);
 
         } else if (chunkRequest.containsKey(fullFileName)) {
@@ -353,6 +393,95 @@ public class FileUploader {
         public Long getUnixLastWriteTimestamp() {
             return unixLastWriteTimestamp;
         }
+    }
+
+    private static void scheduleChunkAckTimeout(String fullFileName, int chunkNumber) {
+        inFlightChunkByFile.put(fullFileName, chunkNumber);
+        ScheduledFuture<?> previousTimeout = chunkAckTimeoutTasks.remove(fullFileName);
+        if (previousTimeout != null) {
+            previousTimeout.cancel(false);
+        }
+
+        ScheduledFuture<?> timeoutTask = timeoutScheduler.schedule(
+                () -> onChunkAckTimeout(fullFileName, chunkNumber),
+                CHUNK_ACK_TIMEOUT_MS,
+                TimeUnit.MILLISECONDS
+        );
+        chunkAckTimeoutTasks.put(fullFileName, timeoutTask);
+    }
+
+    private static void cancelChunkAckTimeout(String fullFileName) {
+        ScheduledFuture<?> timeoutTask = chunkAckTimeoutTasks.remove(fullFileName);
+        if (timeoutTask != null) {
+            timeoutTask.cancel(false);
+        }
+    }
+
+    private static void onChunkAckTimeout(String fullFileName, int chunkNumber) {
+        Integer currentInFlightChunk = inFlightChunkByFile.get(fullFileName);
+        if (currentInFlightChunk == null || currentInFlightChunk != chunkNumber) {
+            return;
+        }
+
+        int retryAttempt = chunkAckRetryCountByFile.getOrDefault(fullFileName, 0);
+        if (retryAttempt >= MAX_CHUNK_ACK_RETRIES) {
+            failUpload(
+                    fullFileName,
+                    "No ACK for chunk " + chunkNumber + " after " + MAX_CHUNK_ACK_RETRIES + " retries"
+            );
+            return;
+        }
+
+        int nextAttempt = retryAttempt + 1;
+        chunkAckRetryCountByFile.put(fullFileName, nextAttempt);
+        int totalChunks = chunkParts.getOrDefault(fullFileName, -1);
+        System.out.printf(
+                "ACK timeout for chunk %d/%d of %s. Retrying (%d/%d)\n",
+                chunkNumber,
+                totalChunks,
+                fullFileName,
+                nextAttempt,
+                MAX_CHUNK_ACK_RETRIES
+        );
+
+        byte[] fileData = upload.get(fullFileName);
+        if (fileData == null) {
+            failUpload(fullFileName, "Upload payload missing while retrying chunk " + chunkNumber);
+            return;
+        }
+
+        setFile(fullFileName, chunkNumber, fileData);
+    }
+
+    private static void failUpload(String fullFileName, String errorMessage) {
+        System.out.println("Upload failed for " + fullFileName + ": " + errorMessage);
+        Consumer<ChunkProgress> progressCallback = progressCallbacks.get(fullFileName);
+        if (progressCallback != null) {
+            int currentChunk = inFlightChunkByFile.getOrDefault(fullFileName, 0);
+            int totalChunks = chunkParts.getOrDefault(fullFileName, 0);
+            ChunkProgress errorProgress = new ChunkProgress(
+                    fullFileName,
+                    currentChunk,
+                    totalChunks,
+                    false,
+                    true,
+                    errorMessage
+            );
+            progressCallback.accept(errorProgress);
+        }
+        clearUploadState(fullFileName);
+    }
+
+    private static void clearUploadState(String fullFileName) {
+        cancelChunkAckTimeout(fullFileName);
+        upload.remove(fullFileName);
+        chunkLength.remove(fullFileName);
+        chunkParts.remove(fullFileName);
+        uploadUnixTimestampByTransport.remove(fullFileName);
+        chunkRequest.remove(fullFileName);
+        inFlightChunkByFile.remove(fullFileName);
+        chunkAckRetryCountByFile.remove(fullFileName);
+        progressCallbacks.remove(fullFileName);
     }
 
     public static void main(String[] args) {
