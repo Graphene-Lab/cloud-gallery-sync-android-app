@@ -342,7 +342,11 @@ public class FileUploader {
             return false;
         }
 
-        enqueueCreateDir();
+        String rootDir = extractInFlightTransportRootDir();
+        if (rootDir.isEmpty()) {
+            rootDir = FileUploader.DEFAULT_PHOTO_DIR;
+        }
+        enqueueCreateDir("", rootDir);
         return true;
     }
 
@@ -361,11 +365,25 @@ public class FileUploader {
         return errorMessage.contains("Could not find a part of the path");
     }
 
-    private static void enqueueCreateDir() {
-        String payloadText = "\t" + FileUploader.DEFAULT_PHOTO_DIR;
+    private static String extractInFlightTransportRootDir() {
+        for (String fullFileName : inFlightChunkByFile.keySet()) {
+            if (fullFileName == null || fullFileName.isEmpty()) {
+                continue;
+            }
+            int slashIndex = fullFileName.indexOf('/');
+            if (slashIndex > 0) {
+                return fullFileName.substring(0, slashIndex);
+            }
+            return fullFileName;
+        }
+        return "";
+    }
+
+    private static void enqueueCreateDir(String path, String folderName) {
+        String payloadText = path + "\t" + folderName;
         byte[] payload = payloadText.getBytes(StandardCharsets.UTF_8);
         System.out.println(
-                "Requesting server directory creation: path='" + "', folder='" + FileUploader.DEFAULT_PHOTO_DIR + "'"
+                "Requesting server directory creation: path='" + path + "', folder='" + folderName + "'"
         );
         RequestManager.enqueueRequest(Command.CreateDir.getId(), payload);
     }
