@@ -332,9 +332,6 @@ public class RequestManager {
         byte[] exponent = Arrays.copyOfRange(decryptedData, offset, offset + 3);
         PublicKey rsaPubKey = createRsaPublicKey(modulus, exponent);
         setClient(rsaPubKey);
-        
-        // Save session after QR processing
-        saveSessionIfCallbackExists();
     }
 
     public static void onResponse(byte[] binary) {

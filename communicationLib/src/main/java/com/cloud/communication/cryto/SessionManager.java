@@ -52,16 +52,6 @@ public class SessionManager {
                 .thenAccept(pair -> {
                     currentSession.setPublicKeyB64(pair.getFirst());
                     currentSession.setClientId(pair.getSecond());
-
-                    // Save the new session
-                    if (RequestManager.persistenceCallback != null) {
-                        try {
-                            RequestManager.persistenceCallback.saveSession(currentSession);
-                            System.out.println("Saved new session with clientId: " + currentSession.getClientId());
-                        } catch (Exception e) {
-                            System.err.println("Failed to save new session: " + e.getMessage());
-                        }
-                    }
                 });
     }
 
