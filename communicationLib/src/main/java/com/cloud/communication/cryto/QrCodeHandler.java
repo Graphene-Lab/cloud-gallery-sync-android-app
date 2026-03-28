@@ -32,14 +32,14 @@ public class QrCodeHandler {
                         qr = base64ToBuffer(qrCode);
                     } catch (Exception e) {
                         alertBox("Wrong QR code!");
-                        return;
+                        throw new IllegalStateException("Wrong QR code!", e);
                     }
 
                     int offset = 0;
                     int type = qr[offset] & 0xFF;
                     if (type != 2) {
                         alertBox("QR code format not supported!");
-                        return;
+                        throw new IllegalStateException("QR code format not supported!");
                     }
                     offset++;
                     SessionManager.getCurrentSession().setPin(pin);

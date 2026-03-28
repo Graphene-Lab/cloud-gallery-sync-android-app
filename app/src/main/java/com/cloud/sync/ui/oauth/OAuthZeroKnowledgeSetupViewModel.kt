@@ -190,14 +190,19 @@ class OAuthZeroKnowledgeSetupViewModel @Inject constructor(
                 }
             } catch (error: Exception) {
                 Log.w(TAG, "completeOAuthPairing failed", error)
+                val message = "There was a problem with credentials. Recheck them and sign in again."
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = error.message ?: "Authentication failed"
+                        errorMessage = message
                     )
                 }
             }
         }
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
     private fun resolveZeroKnowledgeMasterKey(state: OAuthZeroKnowledgeSetupUiState): ByteArray? {

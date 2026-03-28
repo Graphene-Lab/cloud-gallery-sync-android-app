@@ -91,6 +91,7 @@ fun OAuthZeroKnowledgeSetupScreen(
                 onUseZeroKnowledgeForExistingAccountChanged = viewModel::onUseZeroKnowledgeForExistingAccountChanged,
                 onPassphraseChanged = viewModel::onPassphraseChanged,
                 onGeneratePassphrase = viewModel::generateFirstTimePassphrase,
+                onDismissError = viewModel::dismissError,
                 onContinue = viewModel::completeOAuthPairing,
                 onCancel = onCancel
             )
@@ -106,6 +107,7 @@ private fun OAuthZeroKnowledgeSetupContent(
     onUseZeroKnowledgeForExistingAccountChanged: (Boolean) -> Unit,
     onPassphraseChanged: (String) -> Unit,
     onGeneratePassphrase: () -> Unit,
+    onDismissError: () -> Unit,
     onContinue: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -370,14 +372,6 @@ private fun OAuthZeroKnowledgeSetupContent(
                     }
                 }
 
-                setupState.errorMessage?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -404,6 +398,19 @@ private fun OAuthZeroKnowledgeSetupContent(
                             Text("Continue")
                         }
                     }
+                }
+
+                setupState.errorMessage?.let { message ->
+                    AlertDialog(
+                        onDismissRequest = onDismissError,
+                        title = { Text("Pairing Failed") },
+                        text = { Text(message) },
+                        confirmButton = {
+                            TextButton(onClick = onDismissError) {
+                                Text("OK")
+                            }
+                        }
+                    )
                 }
             }
         }

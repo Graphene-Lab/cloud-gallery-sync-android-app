@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.cloud.communication.cryto.Command.getCommandName;
 import static com.cloud.communication.cryto.ConversionUtils.base64ToBuffer;
+import static com.cloud.communication.cryto.ConversionUtils.bufferToString;
 import static com.cloud.communication.cryto.ConversionUtils.int32ToBuffer;
 import static com.cloud.communication.cryto.ConversionUtils.joinBuffers;
 import static com.cloud.communication.cryto.CryptoUtils.alertBox;
@@ -39,6 +40,7 @@ public class RequestManager {
     private static final OkHttpClient client = new OkHttpClient();
     private static ExecutorService executor = Executors.newCachedThreadPool();
     private static final Set<Call> activeCalls = ConcurrentHashMap.newKeySet();//    public static String proxy = "http://195.20.235.5:5050";
+    private static PairingAuthCallback pairingAuthCallback;
 
     public static String proxy = "http://proxy.tc0.it:5050";
 
@@ -75,6 +77,20 @@ public class RequestManager {
 
     public static void setSessionPersistenceCallback(SessionPersistenceCallback callback) {
         persistenceCallback = callback;
+    }
+
+    public static synchronized void setPairingAuthCallback(PairingAuthCallback callback) {
+        pairingAuthCallback = callback;
+    }
+
+    public static synchronized void clearPairingAuthCallback() {
+        pairingAuthCallback = null;
+    }
+
+    private static synchronized PairingAuthCallback consumePairingAuthCallback() {
+        PairingAuthCallback callback = pairingAuthCallback;
+        pairingAuthCallback = null; // this will be null on the next call since pairing is done only 1 time. One-shot callback (or one-time listener) pattern
+        return callback;
     }
 
     public static synchronized void enqueueRequest(Integer commandId, byte[] data) {
@@ -186,6 +202,7 @@ public class RequestManager {
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 activeCalls.remove(call);
                 alertBox("HTTP Request error: " + e.getMessage());
+                notifyPairingAuthError("Network error during pairing/authentication. Please try again.");
                 requestDone("http-failure");
             }
 
@@ -197,18 +214,22 @@ public class RequestManager {
                 switch (code) {
                     case 404:
                         alertBox("Status 404: Cloud not found by SID. No cloud with this User ID has registered in the proxy.");
+                        notifyPairingAuthError("Cloud connection not found. Please recheck credentials and try again.");
                         break;
                     case 503:
                         alertBox("Status 503: Max request concurrent limit reached.");
+                        notifyPairingAuthError("Server is busy. Please try again.");
                         break;
                     case 421:
                         alertBox("Status 421: The cloud is not logged into the proxy. Please restart it.");
+                        notifyPairingAuthError("Cloud is offline. Please try again later.");
                         break;
                     case 200:
                         handleSuccessfulResponse(response);
                         break;
                     default:
                         alertBox("HTTP error code: " + code);
+                        notifyPairingAuthError("Pairing failed with server error " + code + ".");
                         break;
                 }
             }
@@ -264,6 +285,7 @@ public class RequestManager {
         } catch (Exception e) {
             e.printStackTrace();
             alertBox("Error handling response: " + e.getMessage());
+            notifyPairingAuthError("Failed to process pairing response. Please try again.");
         }
     }
 
@@ -326,6 +348,7 @@ public class RequestManager {
         System.out.println("Command: " + command);
         if (Command.Authentication.getId() == commandId) {
             System.out.println("Authentication success!");
+            notifyPairingAuthSuccess();
             AuthSuccess();
             return;
         }
@@ -333,6 +356,12 @@ public class RequestManager {
         byte[] data = Arrays.copyOfRange(binary, 4, binary.length);
         var params = splitData(data);
         System.out.println("Params: " + params);
+        if (Command.Error.getId() == commandId) {
+            String errorMessage = decodeErrorMessage(params);
+            notifyPairingAuthError(errorMessage);
+            alertBox(errorMessage);
+            return;
+        }
 
         if(Command.SetFile.getId() == commandId){
             handleServerUploadResponse(params);
@@ -340,6 +369,49 @@ public class RequestManager {
         if(Command.Pair.getId() == commandId){
             Pairing.Pair(params);
         }
+    }
+
+    private static void notifyPairingAuthSuccess() {
+        PairingAuthCallback callback = consumePairingAuthCallback();
+        if (callback == null) {
+            return;
+        }
+        try {
+            callback.onAuthenticationSuccess();
+        } catch (Exception ex) {
+            System.err.println("Pairing success callback failed: " + ex.getMessage());
+        }
+    }
+
+    private static void notifyPairingAuthError(String message) {
+        PairingAuthCallback callback = consumePairingAuthCallback();
+        if (callback == null) {
+            return;
+        }
+        try {
+            callback.onAuthenticationError(message);
+        } catch (Exception ex) {
+            System.err.println("Pairing error callback failed: " + ex.getMessage());
+        }
+    }
+
+    private static String decodeErrorMessage(List<byte[]> params) {
+        String fallback = "Authentication failed. Please recheck your credentials.";
+        if (params == null || params.isEmpty()) {
+            return fallback;
+        }
+
+        byte[] firstParam = params.get(0);
+        if (firstParam == null || firstParam.length == 0) {
+            return fallback;
+        }
+
+        String decoded = bufferToString(firstParam).trim();
+        if (decoded.isEmpty()) {
+            return fallback;
+        }
+
+        return decoded;
     }
 
     private static void AuthSuccess() {
@@ -362,6 +434,7 @@ public class RequestManager {
     public static synchronized void cancelAllPendingRequests() {
         // Clear all pending requests from the spooler
         spooler.clear();
+        clearPairingAuthCallback();
 
         // Interrupt running requests by shutting down and recreating the executor
         try {
