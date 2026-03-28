@@ -5,28 +5,18 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cloud.sync.BuildConfig
-import com.cloud.sync.domain.repositroy.IAppSettingsRepository
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
-import com.cloud.sync.domain.repositroy.ICseMasterKeyRepository
-import com.cloud.sync.domain.repositroy.ISessionRepository
 import com.cloud.sync.manager.OAuthManager
-import com.cloud.sync.manager.interfaces.ICloudManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val oAuthManager: OAuthManager,
-    private val cloudSpaceRepository: ICloudSpaceRepository,
-    private val sessionRepository: ISessionRepository,
-    private val cseMasterKeyRepository: ICseMasterKeyRepository,
-    private val appSettingsRepository: IAppSettingsRepository,
-    private val cloudManager: ICloudManager
+    private val cloudSpaceRepository: ICloudSpaceRepository
 ) : ViewModel() {
 
     companion object {
@@ -71,19 +61,10 @@ class LoginViewModel @Inject constructor(
                         if (BuildConfig.DEBUG) {
                             Log.d(TAG, "fetched cloudSpace credentials: ${credentials.qrEncrypted}")
                         }
-                        runCatching { sessionRepository.saveCloudSpaceCredentials(credentials) }
-                            .onFailure { e -> Log.w(TAG, "Failed to save cloud space credentials", e) }
-                        cloudManager.pair(credentials.qrEncrypted, credentials.pin).onSuccess {
-                            Log.d(TAG, "handleAuthResult: Connected to cloud")
-
-                            _uiState.value =
-                                LoginUiState.Authenticated(resolveEncryptionSetupComplete())
-                        }
-                            .onFailure { exception ->
-                                Log.w(TAG, "handleAuthResult: Failed to connect to cloud", exception)
-                                _uiState.value =
-                                    LoginUiState.Error(exception.message ?: "Unknown error")
-                            }
+                        _uiState.value = LoginUiState.OAuthCredentialsReady(
+                            qrEncrypted = credentials.qrEncrypted,
+                            pin = credentials.pin
+                        )
                     }
                     .onFailure { exception ->
                         Log.w(
@@ -107,33 +88,5 @@ class LoginViewModel @Inject constructor(
             Log.d(TAG, "retryAuth: Retrying authentication")
         }
         _uiState.value = LoginUiState.Unauthenticated
-    }
-
-    /**
-     * Checks if the user has skipped client-side encryption setup.
-     * @return true if user disabled encryption, false otherwise
-     */
-    private fun isEncryptionSkipped(): Boolean {
-        return !appSettingsRepository.isEncryptionEnabled()
-    }
-
-    /**
-     * Checks if client-side encryption master key has been generated.
-     * @return true if a master key exists in secure storage
-     */
-    private fun isCseMasterKeyGenerated(): Boolean {
-        return cseMasterKeyRepository.hasKey()
-    }
-
-    /**
-     * Checks if the encryption setup is complete.
-     * This is true if either:
-     * 1. User has skipped encryption setup, OR
-     * 2. User has generated/recovered a master key
-     *
-     * @return true if encryption setup is complete (can skip mnemonic screen)
-     */
-    private suspend fun resolveEncryptionSetupComplete(): Boolean = withContext(Dispatchers.IO) {
-        isEncryptionSkipped() || isCseMasterKeyGenerated()
     }
 }

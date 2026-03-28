@@ -4,13 +4,32 @@ import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -22,8 +41,7 @@ private const val TAG = "LoginScreen"
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onLoginAndCseKeyGenerated: () -> Unit,
+    onOAuthCredentialsReady: (qrEncrypted: String, pin: Int) -> Unit,
     onNavigateToScan: () -> Unit,
     onScreenDisplayed: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel()
@@ -34,17 +52,9 @@ fun LoginScreen(
         onScreenDisplayed?.invoke()
     }
 
-    // Handle navigation when authenticated
     LaunchedEffect(uiState) {
-        val authenticatedState = uiState as? LoginUiState.Authenticated
-        if (authenticatedState != null) {
-            Log.d(TAG, "Authentication successful, navigating to main screen")
-            if (authenticatedState.isEncryptionSetupComplete) {
-                onLoginAndCseKeyGenerated()
-            } else {
-                onLoginSuccess()
-            }
-        }
+        val credentialsReadyState = uiState as? LoginUiState.OAuthCredentialsReady ?: return@LaunchedEffect
+        onOAuthCredentialsReady(credentialsReadyState.qrEncrypted, credentialsReadyState.pin)
     }
 
     val authLauncher = rememberLauncherForActivityResult(
@@ -62,61 +72,36 @@ fun LoginScreen(
         }
     }
 
-
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             when (uiState) {
-                is LoginUiState.Loading -> {
-                    if (BuildConfig.DEBUG) {
-                        Log.d(TAG, "Showing loading state")
-                    }
+                is LoginUiState.Loading,
+                is LoginUiState.OAuthCredentialsReady -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Authentication in Progress. Please Wait...",
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-
-                is LoginUiState.Authenticated -> {
-                    if (BuildConfig.DEBUG) {
-                        Log.d(TAG, "Showing authenticated state")
-                    }
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "Successfully authenticated! Connecting...",
+                            text = "Authentication in Progress. Please Wait...",
                             textAlign = TextAlign.Center
                         )
                     }
                 }
 
                 is LoginUiState.Unauthenticated -> {
-                    if (BuildConfig.DEBUG) {
-                        Log.d(TAG, "Showing unauthenticated state")
-                    }
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Welcome to Cloud Sync",
+                            text = "Welcome to Cloud Sync",
                             style = MaterialTheme.typography.headlineMedium
                         )
                         Spacer(modifier = Modifier.height(32.dp))
@@ -136,20 +121,16 @@ fun LoginScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(onClick = {
-                            if (BuildConfig.DEBUG) {
-                                Log.d(TAG, "Scan QR Code button clicked, opening scan screen")
-                            }
-                            onNavigateToScan()
-                        }) {
+                        OutlinedButton(onClick = onNavigateToScan) {
                             Text("Connect via QR Code")
                         }
                     }
                 }
 
-
                 is LoginUiState.Error -> {
-                    Log.w(TAG, "Showing error state: ${(uiState as LoginUiState.Error).message}")
+                    val message = (uiState as LoginUiState.Error).message
+                    Log.w(TAG, "Showing error state: $message")
+
                     Column(
                         modifier = Modifier
                             .padding(24.dp)
@@ -177,18 +158,16 @@ fun LoginScreen(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = "Error",
                                     tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.height(48.dp)
                                 )
-
                                 Text(
                                     text = "Oops! Something went wrong",
                                     style = MaterialTheme.typography.headlineSmall,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     textAlign = TextAlign.Center
                                 )
-
                                 Text(
-                                    text = (uiState as LoginUiState.Error).message,
+                                    text = message,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     textAlign = TextAlign.Center,
@@ -200,12 +179,7 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
-                            onClick = {
-                                if (BuildConfig.DEBUG) {
-                                    Log.d(TAG, "Try again button clicked")
-                                }
-                                viewModel.retryAuth()
-                            },
+                            onClick = viewModel::retryAuth,
                             modifier = Modifier
                                 .fillMaxWidth(0.6f)
                                 .height(48.dp),
@@ -216,7 +190,7 @@ fun LoginScreen(
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.height(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(

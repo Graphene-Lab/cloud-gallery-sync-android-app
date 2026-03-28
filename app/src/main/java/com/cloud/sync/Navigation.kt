@@ -1,6 +1,5 @@
 package com.cloud.sync
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -8,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.cloud.sync.ui.auth.AuthScreen
 import com.cloud.sync.ui.auth.AuthZeroKnowledgeScreen
 import com.cloud.sync.ui.login.LoginScreen
+import com.cloud.sync.ui.oauth.OAuthZeroKnowledgeSetupScreen
 import com.cloud.sync.ui.profile.ProfileScreen
 import com.cloud.sync.ui.mnemonic.MnemonicScreen
 import com.cloud.sync.ui.subscription.SubscriptionScreen
@@ -104,26 +104,48 @@ fun AppNavigation(
                 } else {
                     null
                 },
-                onLoginAndCseKeyGenerated = {
-                    Log.w("auth", "onLoginSuccess() called. Navigating to SyncScreen...")
+                onOAuthCredentialsReady = { qrEncrypted, pin ->
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("oauth_qr_encrypted", qrEncrypted)
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("oauth_pin", pin)
+                    navController.navigate("oauth_zk")
+                },
+                onNavigateToScan = {
+                    navController.navigate("scan")
+                }
+            )
+        }
+
+        composable("oauth_zk") {
+            val qrEncrypted = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>("oauth_qr_encrypted")
+            val pin = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<Int>("oauth_pin")
+
+            OAuthZeroKnowledgeSetupScreen(
+                qrEncrypted = qrEncrypted,
+                pin = pin,
+                onAuthenticationSuccess = {
                     navController.navigate("sync") {
                         popUpTo("login") {
                             inclusive = true
                         }
                     }
                 },
-                onLoginSuccess = {
+                onAuthenticationSuccessWithoutCse = {
                     navController.navigate("mnemonic") {
-                        Log.w(
-                            "auth",
-                            "onLoginAndCseKeyGenerated() called. Navigating to MnemonicScreen..."
-                        )
-
-                        popUpTo("login") {}
+                        popUpTo("login") {
+                            inclusive = true
+                        }
                     }
                 },
-                onNavigateToScan = {
-                    navController.navigate("scan")
+                onCancel = {
+                    navController.popBackStack("login", false)
                 }
             )
         }
