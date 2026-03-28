@@ -32,6 +32,7 @@ public class FileUploader {
     private static final int CHUNK_SIZE = 1024 * 1024; // 1MB
     private static final long CHUNK_ACK_TIMEOUT_MS = 30_000L;
     private static final int MAX_CHUNK_ACK_RETRIES = 3;
+    private static final String DEFAULT_PHOTO_DIR = "Photos";
 
     // Internal state
     private static final Map<String, byte[]> upload = new ConcurrentHashMap<>();
@@ -332,6 +333,19 @@ public class FileUploader {
         }
     }
 
+    public static boolean handleServerErrorResponse(String errorMessage) {
+        if (errorMessage == null || errorMessage.trim().isEmpty()) {
+            return false;
+        }
+
+        if (!isMissingDirectoryError(errorMessage)) {
+            return false;
+        }
+
+        enqueueCreateDir();
+        return true;
+    }
+
     private static void refreshDirectory(String fullFileName) {
         String[] parts = fullFileName.split("/");
         StringBuilder pathBuilder = new StringBuilder();
@@ -341,6 +355,19 @@ public class FileUploader {
         }
         String path = pathBuilder.toString();
         System.out.println("Refreshing directory: " + path);
+    }
+
+    private static boolean isMissingDirectoryError(String errorMessage) {
+        return errorMessage.contains("Could not find a part of the path");
+    }
+
+    private static void enqueueCreateDir() {
+        String payloadText = "\t" + FileUploader.DEFAULT_PHOTO_DIR;
+        byte[] payload = payloadText.getBytes(StandardCharsets.UTF_8);
+        System.out.println(
+                "Requesting server directory creation: path='" + "', folder='" + FileUploader.DEFAULT_PHOTO_DIR + "'"
+        );
+        RequestManager.enqueueRequest(Command.CreateDir.getId(), payload);
     }
 
 

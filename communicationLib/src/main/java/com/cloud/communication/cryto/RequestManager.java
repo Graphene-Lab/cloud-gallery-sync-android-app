@@ -22,6 +22,7 @@ import static com.cloud.communication.cryto.ConversionUtils.int32ToBuffer;
 import static com.cloud.communication.cryto.ConversionUtils.joinBuffers;
 import static com.cloud.communication.cryto.CryptoUtils.alertBox;
 import static com.cloud.communication.cryto.CryptoUtils.splitData;
+import static com.cloud.communication.cryto.FileUploader.handleServerErrorResponse;
 import static com.cloud.communication.cryto.FileUploader.handleServerUploadResponse;
 import static com.cloud.communication.cryto.QrCodeHandler.setClient;
 import static com.cloud.communication.cryto.encryption.AesEncryption.decryptData;
@@ -355,6 +356,7 @@ public class RequestManager {
         System.out.println("Params: " + params);
         if (Command.Error.getId() == commandId) {
             String errorMessage = decodeErrorMessage(params);
+            handleServerErrorResponse(errorMessage);
             notifyPairingAuthError(errorMessage);
             alertBox(errorMessage);
             return;
