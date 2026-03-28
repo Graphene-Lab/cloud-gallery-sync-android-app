@@ -1,6 +1,7 @@
 package com.cloud.sync.ui.oauth
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +62,10 @@ fun OAuthZeroKnowledgeSetupScreen(
     viewModel: OAuthZeroKnowledgeSetupViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    BackHandler(enabled = !uiState.isSubmitting) {
+        onCancel()
+    }
 
     LaunchedEffect(qrEncrypted, pin) {
         viewModel.initialize(qrEncrypted, pin)

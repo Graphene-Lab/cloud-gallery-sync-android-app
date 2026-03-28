@@ -1,6 +1,8 @@
 package com.cloud.sync
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -97,12 +99,20 @@ fun AppNavigation(
             )
         }
 
-        composable("login") {
+        composable("login") { backStackEntry ->
+            val oauthZkCancelled by backStackEntry.savedStateHandle
+                .getStateFlow("oauth_zk_cancelled", false)
+                .collectAsState()
+
             LoginRoute(
                 onScreenDisplayed = if (startDestination == "login") {
                     onInitialDestinationDisplayed
                 } else {
                     null
+                },
+                oauthZkCancelled = oauthZkCancelled,
+                onOauthZkCancelConsumed = {
+                    backStackEntry.savedStateHandle["oauth_zk_cancelled"] = false
                 },
                 onOAuthPairingCredentialsResolved = { qrEncrypted, pin ->
                     navController.currentBackStackEntry
@@ -145,6 +155,9 @@ fun AppNavigation(
                     }
                 },
                 onCancel = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("oauth_zk_cancelled", true)
                     navController.popBackStack("login", false)
                 }
             )

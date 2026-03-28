@@ -71,7 +71,6 @@ class LoginViewModel @Inject constructor(
                                 pin = credentials.pin
                             )
                         )
-                        _uiState.value = LoginUiState.Unauthenticated
                     }
                     .onFailure { exception ->
                         Log.w(

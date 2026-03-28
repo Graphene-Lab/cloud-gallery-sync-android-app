@@ -8,10 +8,18 @@ import kotlinx.coroutines.flow.collect
 @Composable
 fun LoginRoute(
     onOAuthPairingCredentialsResolved: (qrEncrypted: String, pin: Int) -> Unit,
+    oauthZkCancelled: Boolean,
+    onOauthZkCancelConsumed: () -> Unit,
     onNavigateToScan: () -> Unit,
     onScreenDisplayed: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(oauthZkCancelled) {
+        if (!oauthZkCancelled) return@LaunchedEffect
+        viewModel.retryAuth()
+        onOauthZkCancelConsumed()
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
