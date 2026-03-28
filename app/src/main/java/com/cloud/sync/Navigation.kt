@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.cloud.sync.ui.auth.AuthScreen
 import com.cloud.sync.ui.auth.AuthZeroKnowledgeScreen
-import com.cloud.sync.ui.login.LoginScreen
+import com.cloud.sync.ui.login.LoginRoute
 import com.cloud.sync.ui.oauth.OAuthZeroKnowledgeSetupScreen
 import com.cloud.sync.ui.profile.ProfileScreen
 import com.cloud.sync.ui.mnemonic.MnemonicScreen
@@ -98,13 +98,13 @@ fun AppNavigation(
         }
 
         composable("login") {
-            LoginScreen(
+            LoginRoute(
                 onScreenDisplayed = if (startDestination == "login") {
                     onInitialDestinationDisplayed
                 } else {
                     null
                 },
-                onOAuthCredentialsReady = { qrEncrypted, pin ->
+                onOAuthPairingCredentialsResolved = { qrEncrypted, pin ->
                     navController.currentBackStackEntry
                         ?.savedStateHandle
                         ?.set("oauth_qr_encrypted", qrEncrypted)

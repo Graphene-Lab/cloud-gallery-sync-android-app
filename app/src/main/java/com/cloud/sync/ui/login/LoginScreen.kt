@@ -36,13 +36,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cloud.sync.BuildConfig
-import kotlinx.coroutines.flow.collect
 
 private const val TAG = "LoginScreen"
 
 @Composable
 fun LoginScreen(
-    onOAuthCredentialsReady: (qrEncrypted: String, pin: Int) -> Unit,
     onNavigateToScan: () -> Unit,
     onScreenDisplayed: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel()
@@ -51,16 +49,6 @@ fun LoginScreen(
 
     LaunchedEffect(Unit) {
         onScreenDisplayed?.invoke()
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is LoginEvent.OAuthPairingCredentialsResolved -> {
-                    onOAuthCredentialsReady(event.qrEncrypted, event.pin)
-                }
-            }
-        }
     }
 
     val authLauncher = rememberLauncherForActivityResult(
