@@ -8,7 +8,9 @@ import com.cloud.sync.BuildConfig
 import com.cloud.sync.domain.repositroy.ICloudSpaceRepository
 import com.cloud.sync.manager.OAuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,6 +27,8 @@ class LoginViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Unauthenticated)
     val uiState = _uiState.asStateFlow()
+    private val _events = MutableSharedFlow<LoginEvent>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     init {
         if (BuildConfig.DEBUG) {
@@ -61,10 +65,13 @@ class LoginViewModel @Inject constructor(
                         if (BuildConfig.DEBUG) {
                             Log.d(TAG, "fetched cloudSpace credentials: ${credentials.qrEncrypted}")
                         }
-                        _uiState.value = LoginUiState.OAuthCredentialsReady(
-                            qrEncrypted = credentials.qrEncrypted,
-                            pin = credentials.pin
+                        _events.emit(
+                            LoginEvent.OAuthPairingCredentialsResolved(
+                                qrEncrypted = credentials.qrEncrypted,
+                                pin = credentials.pin
+                            )
                         )
+                        _uiState.value = LoginUiState.Unauthenticated
                     }
                     .onFailure { exception ->
                         Log.w(

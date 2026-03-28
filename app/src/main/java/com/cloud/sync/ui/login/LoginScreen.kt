@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cloud.sync.BuildConfig
+import kotlinx.coroutines.flow.collect
 
 private const val TAG = "LoginScreen"
 
@@ -52,9 +53,14 @@ fun LoginScreen(
         onScreenDisplayed?.invoke()
     }
 
-    LaunchedEffect(uiState) {
-        val credentialsReadyState = uiState as? LoginUiState.OAuthCredentialsReady ?: return@LaunchedEffect
-        onOAuthCredentialsReady(credentialsReadyState.qrEncrypted, credentialsReadyState.pin)
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is LoginEvent.OAuthPairingCredentialsResolved -> {
+                    onOAuthCredentialsReady(event.qrEncrypted, event.pin)
+                }
+            }
+        }
     }
 
     val authLauncher = rememberLauncherForActivityResult(
@@ -78,8 +84,7 @@ fun LoginScreen(
             contentAlignment = Alignment.Center
         ) {
             when (uiState) {
-                is LoginUiState.Loading,
-                is LoginUiState.OAuthCredentialsReady -> {
+                is LoginUiState.Loading -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
