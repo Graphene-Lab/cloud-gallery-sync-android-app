@@ -299,9 +299,9 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = onNavigateToSubscription) {
-                    Text("Manage Subscription")
-                }
+                // Button(onClick = onNavigateToSubscription) {
+                //     Text("Manage Subscription")
+                // }
 
                 Spacer(modifier = Modifier.height(8.dp))
             }
