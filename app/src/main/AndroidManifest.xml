@@ -18,7 +18,7 @@
 
 
     <application
-        android:name="com.cloud.sync.MyApp"
+        android:name="com.graphenelab.photosync.MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

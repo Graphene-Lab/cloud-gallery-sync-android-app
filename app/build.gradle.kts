@@ -34,11 +34,11 @@ val hasReleaseSigning =
         !releaseKeyPassword.isNullOrBlank()
 
 android {
-    namespace = "com.cloud.sync"
+    namespace = "com.graphenelab.photosync"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.cloud.sync"
+        applicationId = "com.graphenelab.photosync"
         minSdk = 26
         targetSdk = 35
         versionCode = 4
@@ -46,7 +46,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.cloud.sync")
+        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.graphenelab.photosync")
     }
 
     signingConfigs {
@@ -98,11 +98,11 @@ android {
         compose = true
         buildConfig = true
     }
-    fun Packaging.() {
-        resources {
-            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
-        }
-    }
+//    fun Packaging.() {
+//        resources {
+//            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+//        }
+//    }
     testOptions {
         unitTests.all {
             it.useJUnitPlatform()
