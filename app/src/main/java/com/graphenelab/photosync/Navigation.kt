@@ -12,7 +12,7 @@ import com.graphenelab.photosync.ui.login.LoginRoute
 import com.graphenelab.photosync.ui.oauth.OAuthZeroKnowledgeSetupScreen
 import com.graphenelab.photosync.ui.profile.ProfileScreen
 import com.graphenelab.photosync.ui.mnemonic.MnemonicScreen
-import com.graphenelab.photosync.ui.subscription.SubscriptionScreen
+//import com.graphenelab.photosync.ui.subscription.SubscriptionScreen
 import com.graphenelab.photosync.ui.sync.SyncScreen
 import com.graphenelab.photosync.ui.scan.ScanScreen
 
@@ -180,7 +180,7 @@ fun AppNavigation(
         }
 
         composable("subscription") {
-            SubscriptionScreen()
+//            SubscriptionScreen()
         }
 
         composable("mnemonic") {

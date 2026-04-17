@@ -172,7 +172,7 @@ dependencies {
     implementation(libs.androidx.security.crypto)
 
     // Stripe for Android
-    implementation(libs.stripe.android)
+//    implementation(libs.stripe.android)
 
     // Retrofit for networking
     implementation(libs.retrofit)
