@@ -4,6 +4,7 @@ import android.util.Log
 import com.graphenelab.photosync.data.network.payment.SubscriptionPlan
 import com.graphenelab.photosync.data.network.user.CloudSpaceService
 import com.graphenelab.photosync.domain.model.CloudSpaceCredentials
+import com.graphenelab.photosync.domain.repositroy.DeleteAccountResult
 import com.graphenelab.photosync.domain.repositroy.ICloudSpaceRepository
 import retrofit2.HttpException
 import java.io.IOException
@@ -65,6 +66,40 @@ class CloudSpaceRepository @Inject constructor(
             Result.failure(NetworkException("Network error: ${e.message}"))
         }
     }
+
+    override suspend fun deleteCurrentUserAccount(): Result<DeleteAccountResult> {
+        return try {
+            val response = cloudSpaceService.deleteCurrentUserAccount()
+            when {
+                response.code() == 204 || response.isSuccessful -> {
+                    Result.success(DeleteAccountResult.Deleted)
+                }
+
+                response.code() == 401 || response.code() == 403 -> {
+                    Result.failure(SessionExpiredException("Session expired"))
+                }
+
+                response.code() == 409 && isUserNotFoundConflict(response.errorBody()?.string()) -> {
+                    Result.success(DeleteAccountResult.UserNotFound)
+                }
+
+                else -> {
+                    Result.failure(
+                        RetryableOperationException("Unable to delete account. Please try again.")
+                    )
+                }
+            }
+        } catch (e: IOException) {
+            Result.failure(RetryableOperationException("Unable to delete account. Please try again."))
+        } catch (e: Exception) {
+            Result.failure(RetryableOperationException("Unable to delete account. Please try again."))
+        }
+    }
+
+    private fun isUserNotFoundConflict(errorBody: String?): Boolean {
+        if (errorBody.isNullOrBlank()) return false
+        return errorBody.contains("USER_NOT_FOUND", ignoreCase = true)
+    }
 }
 
 // Custom exception classes
@@ -72,3 +107,5 @@ class NetworkException(message: String) : Exception(message)
 class UnauthorizedException(message: String) : Exception(message)
 class NotFoundException(message: String) : Exception(message)
 class ServerErrorException(message: String) : Exception(message)
+class SessionExpiredException(message: String) : Exception(message)
+class RetryableOperationException(message: String) : Exception(message)

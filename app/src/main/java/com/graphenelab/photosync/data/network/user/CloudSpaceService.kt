@@ -1,6 +1,8 @@
 package com.graphenelab.photosync.data.network.user
 
 import com.graphenelab.photosync.data.network.payment.SubscriptionPlan
+import retrofit2.Response
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 
 interface CloudSpaceService {
@@ -9,4 +11,7 @@ interface CloudSpaceService {
     
     @GET("me/subscription-plan")
     suspend fun getCurrentSubscriptionPlan(): SubscriptionPlan
+
+    @DELETE("user/me")
+    suspend fun deleteCurrentUserAccount(): Response<Unit>
 }

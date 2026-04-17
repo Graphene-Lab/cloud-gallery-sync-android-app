@@ -6,6 +6,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.graphenelab.communication.crypto.SessionManager
+import com.graphenelab.photosync.data.repository.SessionExpiredException
+import com.graphenelab.photosync.data.repository.UnauthorizedException
+import com.graphenelab.photosync.domain.repositroy.DeleteAccountResult
 import com.graphenelab.photosync.domain.repositroy.IAppSettingsRepository
 import com.graphenelab.photosync.domain.repositroy.ICloudSpaceRepository
 import com.graphenelab.photosync.domain.repositroy.ICseMasterKeyRepository
@@ -15,8 +18,10 @@ import com.graphenelab.photosync.domain.repositroy.ISessionRepository
 import com.graphenelab.photosync.domain.repositroy.ISyncRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -38,6 +43,8 @@ class ProfileViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+    private val _events = MutableSharedFlow<ProfileEvent>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     companion object {
         private const val TAG = "ProfileViewModel"
@@ -205,6 +212,59 @@ class ProfileViewModel @Inject constructor(
     fun clearDeleteStatus() {
         Log.d(TAG, "clearDeleteStatus: Clearing delete status")
         _uiState.update { it.copy(deletedPhotosCount = null, deleteError = null, photoUrisToDelete = null) }
+    }
+
+    fun deleteAccount() {
+        if (_uiState.value.isDeletingAccount) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeletingAccount = true, deleteAccountError = null) }
+            try {
+                cloudSpaceRepository.deleteCurrentUserAccount()
+                    .onSuccess { result ->
+                        when (result) {
+                            DeleteAccountResult.Deleted,
+                            DeleteAccountResult.UserNotFound -> {
+                                clearLocalStateAfterAccountDeletion()
+                                _events.emit(ProfileEvent.NavigateToLogin())
+                            }
+                        }
+                    }
+                    .onFailure { error ->
+                        when (error) {
+                            is SessionExpiredException,
+                            is UnauthorizedException -> {
+                                clearLocalStateAfterAccountDeletion()
+                                _events.emit(
+                                    ProfileEvent.NavigateToLogin(
+                                        toastMessage = "Session expired. Please sign in again."
+                                    )
+                                )
+                            }
+
+                            else -> {
+                                _uiState.update {
+                                    it.copy(
+                                        deleteAccountError = error.message
+                                            ?: "Unable to delete account. Please try again."
+                                    )
+                                }
+                            }
+                        }
+                    }
+            } finally {
+                _uiState.update { it.copy(isDeletingAccount = false) }
+            }
+        }
+    }
+
+    private suspend fun clearLocalStateAfterAccountDeletion() = withContext(Dispatchers.IO) {
+        oauthTokenRepository.clearTokens()
+        cseMasterKeyRepository.clearKey()
+        sessionRepository.clearAuthState()
+        syncRepository.clearAllData()
+        SessionManager.clearSession()
+        appSettingsRepository.setEncryptionEnabled(true)
     }
 
     fun logout() {

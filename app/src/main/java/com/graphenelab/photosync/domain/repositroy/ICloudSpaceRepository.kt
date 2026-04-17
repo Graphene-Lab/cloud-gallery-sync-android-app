@@ -6,4 +6,10 @@ import com.graphenelab.photosync.domain.model.CloudSpaceCredentials
 interface ICloudSpaceRepository {
     suspend fun getCloudSpaceCredentials(): Result<CloudSpaceCredentials>
     suspend fun getCurrentSubscriptionPlan(): Result<SubscriptionPlan>
+    suspend fun deleteCurrentUserAccount(): Result<DeleteAccountResult>
+}
+
+enum class DeleteAccountResult {
+    Deleted,
+    UserNotFound
 }

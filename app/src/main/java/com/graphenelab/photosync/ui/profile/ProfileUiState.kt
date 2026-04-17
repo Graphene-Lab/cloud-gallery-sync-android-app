@@ -16,5 +16,7 @@ data class ProfileUiState(
     val isDeletingSyncedPhotos: Boolean = false,
     val deletedPhotosCount: Int? = null,
     val deleteError: String? = null,
-    val photoUrisToDelete: List<Uri>? = null
+    val photoUrisToDelete: List<Uri>? = null,
+    val isDeletingAccount: Boolean = false,
+    val deleteAccountError: String? = null
 )

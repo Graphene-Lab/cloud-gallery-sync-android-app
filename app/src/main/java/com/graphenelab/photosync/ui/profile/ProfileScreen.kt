@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -90,6 +91,19 @@ fun ProfileScreen(
                     Log.e("ProfileScreen", "Failed to create delete request (Android 11+)", e)
                     pendingDeleteUris = null
                     viewModel.onDeletePermissionResult(false, 0)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ProfileEvent.NavigateToLogin -> {
+                    event.toastMessage?.let {
+                        Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                    }
+                    onLogout()
                 }
             }
         }
@@ -416,17 +430,131 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Button(
-                onClick = {
+            DangerZoneSection(
+                isDeletingAccount = uiState.isDeletingAccount,
+                deleteAccountError = uiState.deleteAccountError,
+                onDeleteAccountConfirmed = { viewModel.deleteAccount() },
+                onLogoutClick = {
                     viewModel.logout()
                     onLogout()
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+
+}
+
+@Composable
+internal fun DangerZoneSection(
+    isDeletingAccount: Boolean,
+    deleteAccountError: String?,
+    onDeleteAccountConfirmed: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
+    var showDeleteAccountConfirmDialog by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Danger Zone",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Deleting your account is permanent and cannot be undone.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { showDeleteAccountConfirmDialog = true },
+                enabled = !isDeletingAccount,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("delete_account_button"),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                if (isDeletingAccount) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.onError,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Deleting Account...")
+                } else {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete Account")
+                }
+            }
+
+            if (showDeleteAccountConfirmDialog) {
+                AlertDialog(
+                    onDismissRequest = {
+                        if (!isDeletingAccount) {
+                            showDeleteAccountConfirmDialog = false
+                        }
+                    },
+                    title = { Text("Delete Account?") },
+                    text = {
+                        Text(
+                            "This action is permanent. Your account and synced data will be removed from this device."
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showDeleteAccountConfirmDialog = false
+                                onDeleteAccountConfirmed()
+                            },
+                            enabled = !isDeletingAccount,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Delete Permanently")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showDeleteAccountConfirmDialog = false },
+                            enabled = !isDeletingAccount
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            deleteAccountError?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Error: $error",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = onLogoutClick,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Logout")
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
