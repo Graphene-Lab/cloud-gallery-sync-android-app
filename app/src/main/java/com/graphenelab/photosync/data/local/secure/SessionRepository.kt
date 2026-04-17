@@ -18,6 +18,7 @@ import java.security.KeyStore
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import kotlinx.serialization.encodeToString
 
 @Singleton
 class SessionRepository @Inject constructor(
