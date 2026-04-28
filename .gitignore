@@ -16,3 +16,4 @@ keystore.properties
 *.jks
 *.keystore
 .gradle-user-home/
+/build-release-local.ps1
