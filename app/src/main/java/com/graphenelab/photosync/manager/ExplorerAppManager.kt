@@ -52,9 +52,9 @@ class ExplorerAppManager @Inject constructor(
     }
 
     private companion object {
-        const val EXPLORER_PACKAGE = "com.khayym.cloudstorage"
+        const val EXPLORER_PACKAGE = "com.graphenelab.cloudexplorer"
         const val EXPLORER_DEEPLINK = "com.cloudapp://"
         const val EXPLORER_DOWNLOAD_URL =
-            "https://github.com/ramazan199/graphene-cloud-explorer-react-native-app/releases"
+            "https://play.google.com/store/apps/details?id=com.graphenelab.cloudexplorer"
     }
 }

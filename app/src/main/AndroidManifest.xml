@@ -16,6 +16,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <queries>
+        <package android:name="com.graphenelab.cloudexplorer" />
+    </queries>
+
 
     <application
         android:name="com.graphenelab.photosync.MyApp"
