@@ -46,9 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 
 @Composable
 fun OAuthZeroKnowledgeSetupScreen(
@@ -136,7 +138,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Zero-Knowledge Setup",
+                    text = stringResource(R.string.oauth_zk_setup_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Row(
@@ -144,14 +146,14 @@ private fun OAuthZeroKnowledgeSetupContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Finalize your account pairing by enabling Zero-Knowledge Encryption.",
+                        text = stringResource(R.string.oauth_zk_setup_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { showSecurityInfo = true }) {
                         Icon(
                             imageVector = Icons.Default.Info,
-                            contentDescription = "Security details"
+                            contentDescription = stringResource(R.string.oauth_zk_security_cd)
                         )
                     }
                 }
@@ -159,20 +161,13 @@ private fun OAuthZeroKnowledgeSetupContent(
                 if (showSecurityInfo) {
                     AlertDialog(
                         onDismissRequest = { showSecurityInfo = false },
-                        title = { Text("How Zero-Knowledge Works") },
+                        title = { Text(stringResource(R.string.oauth_zk_how_works_title)) },
                         text = {
-                            Text(
-                                "Your files are encrypted locally on your device before they are sent to our servers," +
-                                    " ensuring only you can access your data; our servers never see it.\n\n" +
-                                    "Your passphrase derives a master key. From that master key, " +
-                                    "the app derives a unique encryption key for each file using " +
-                                    "the file name and file timestamp. This means files are not " +
-                                    "encrypted with one static key, which provides stronger isolation."
-                            )
+                            Text(stringResource(R.string.oauth_zk_how_works_body))
                         },
                         confirmButton = {
                             TextButton(onClick = { showSecurityInfo = false }) {
-                                Text("OK")
+                                Text(stringResource(R.string.common_ok))
                             }
                         }
                     )
@@ -184,7 +179,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "This is my first Sign-In",
+                        text = stringResource(R.string.oauth_zk_first_signin),
                         modifier = Modifier.weight(1f)
                     )
                     Switch(
@@ -195,7 +190,7 @@ private fun OAuthZeroKnowledgeSetupContent(
 
                 if (setupState.isFirstKeycloakLogin) {
                     Text(
-                        text = "Choose how to configure passphrase:",
+                        text = stringResource(R.string.oauth_zk_choose_passphrase),
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -212,7 +207,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Generated passphrase (24 words):",
+                                    text = stringResource(R.string.oauth_zk_generated_passphrase_label),
                                     style = MaterialTheme.typography.labelLarge,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -223,7 +218,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Refresh,
-                                            contentDescription = "Regenerate passphrase"
+                                            contentDescription = stringResource(R.string.oauth_zk_regenerate_cd)
                                         )
                                     }
                                     FilledTonalIconButton(
@@ -233,7 +228,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                             )
                                             Toast.makeText(
                                                 context,
-                                                "Passphrase copied",
+                                                context.getString(R.string.oauth_zk_passphrase_copied),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         },
@@ -242,7 +237,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.ContentCopy,
-                                            contentDescription = "Copy passphrase"
+                                            contentDescription = stringResource(R.string.oauth_zk_copy_passphrase_cd)
                                         )
                                     }
                                 }
@@ -263,7 +258,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "Important: Save this passphrase safely.",
+                                        text = stringResource(R.string.oauth_zk_save_passphrase_warning),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.weight(1f)
@@ -271,7 +266,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                     IconButton(onClick = { showPassphraseWarningInfo = true }) {
                                         Icon(
                                             imageVector = Icons.Default.Warning,
-                                            contentDescription = "Passphrase warning details",
+                                            contentDescription = stringResource(R.string.oauth_zk_warning_cd),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -280,17 +275,13 @@ private fun OAuthZeroKnowledgeSetupContent(
                                 if (showPassphraseWarningInfo) {
                                     AlertDialog(
                                         onDismissRequest = { showPassphraseWarningInfo = false },
-                                        title = { Text("Passphrase Warning") },
+                                        title = { Text(stringResource(R.string.oauth_zk_passphrase_warning_title)) },
                                         text = {
-                                            Text(
-                                                "Do not lose this passphrase. Save it in a secure place. " +
-                                                    "If you lose it, you can lose access to your encrypted files. " +
-                                                    "This passphrase is not stored on our servers."
-                                            )
+                                            Text(stringResource(R.string.oauth_zk_passphrase_warning_body))
                                         },
                                         confirmButton = {
                                             TextButton(onClick = { showPassphraseWarningInfo = false }) {
-                                                Text("OK")
+                                                Text(stringResource(R.string.common_ok))
                                             }
                                         }
                                     )
@@ -304,15 +295,15 @@ private fun OAuthZeroKnowledgeSetupContent(
                                 onValueChange = onPassphraseChanged,
                                 modifier = Modifier.fillMaxWidth(),
                                 minLines = 3,
-                                label = { Text("Your passphrase") },
-                                placeholder = { Text("Enter 12 or 24-word passphrase") },
+                                label = { Text(stringResource(R.string.oauth_zk_own_passphrase_label)) },
+                                placeholder = { Text(stringResource(R.string.oauth_zk_own_passphrase_placeholder)) },
                                 enabled = !setupState.isSubmitting
                             )
                         }
 
                         FirstTimeZeroKnowledgeChoice.SKIP -> {
                             Text(
-                                text = "Encryption will be disabled for this session. This is not recommended.",
+                                text = stringResource(R.string.oauth_zk_skip_warning),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -320,7 +311,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                     }
                 } else {
                     Text(
-                        text = "Was this account originally created with zero-knowledge encryption enabled?",
+                        text = stringResource(R.string.oauth_zk_existing_question),
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -335,14 +326,14 @@ private fun OAuthZeroKnowledgeSetupContent(
                                 modifier = Modifier.weight(1f),
                                 enabled = !setupState.isSubmitting
                             ) {
-                                Text("Yes")
+                                Text(stringResource(R.string.auth_zk_yes))
                             }
                             OutlinedButton(
                                 onClick = { onUseZeroKnowledgeForExistingAccountChanged(false) },
                                 modifier = Modifier.weight(1f),
                                 enabled = !setupState.isSubmitting
                             ) {
-                                Text("No")
+                                Text(stringResource(R.string.auth_zk_no))
                             }
                         } else {
                             OutlinedButton(
@@ -350,14 +341,14 @@ private fun OAuthZeroKnowledgeSetupContent(
                                 modifier = Modifier.weight(1f),
                                 enabled = !setupState.isSubmitting
                             ) {
-                                Text("Yes")
+                                Text(stringResource(R.string.auth_zk_yes))
                             }
                             Button(
                                 onClick = { onUseZeroKnowledgeForExistingAccountChanged(false) },
                                 modifier = Modifier.weight(1f),
                                 enabled = !setupState.isSubmitting
                             ) {
-                                Text("No")
+                                Text(stringResource(R.string.auth_zk_no))
                             }
                         }
                     }
@@ -368,8 +359,8 @@ private fun OAuthZeroKnowledgeSetupContent(
                             onValueChange = onPassphraseChanged,
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 3,
-                            label = { Text("Existing passphrase") },
-                            placeholder = { Text("Enter the same passphrase used at account creation") },
+                            label = { Text(stringResource(R.string.oauth_zk_existing_passphrase_label)) },
+                            placeholder = { Text(stringResource(R.string.oauth_zk_existing_passphrase_placeholder)) },
                             enabled = !setupState.isSubmitting
                         )
                     }
@@ -384,7 +375,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                         modifier = Modifier.weight(1f),
                         enabled = !setupState.isSubmitting
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.oauth_zk_cancel))
                     }
 
                     Button(
@@ -398,7 +389,7 @@ private fun OAuthZeroKnowledgeSetupContent(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Continue")
+                            Text(stringResource(R.string.oauth_zk_continue))
                         }
                     }
                 }
@@ -406,11 +397,11 @@ private fun OAuthZeroKnowledgeSetupContent(
                 setupState.errorMessage?.let { message ->
                     AlertDialog(
                         onDismissRequest = onDismissError,
-                        title = { Text("Pairing Failed") },
+                        title = { Text(stringResource(R.string.oauth_zk_pairing_failed)) },
                         text = { Text(message) },
                         confirmButton = {
                             TextButton(onClick = onDismissError) {
-                                Text("OK")
+                                Text(stringResource(R.string.common_ok))
                             }
                         }
                     )
@@ -434,20 +425,20 @@ private fun FirstTimeChoiceButtons(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ChoiceButton(
-                label = "Generate",
+                label = stringResource(R.string.oauth_zk_choice_generate),
                 selected = selectedChoice == FirstTimeZeroKnowledgeChoice.GENERATE_PASSPHRASE,
                 onClick = { onChoiceSelected(FirstTimeZeroKnowledgeChoice.GENERATE_PASSPHRASE) },
                 modifier = Modifier.weight(1f)
             )
             ChoiceButton(
-                label = "Use Mine",
+                label = stringResource(R.string.oauth_zk_choice_use_mine),
                 selected = selectedChoice == FirstTimeZeroKnowledgeChoice.USE_OWN_PASSPHRASE,
                 onClick = { onChoiceSelected(FirstTimeZeroKnowledgeChoice.USE_OWN_PASSPHRASE) },
                 modifier = Modifier.weight(1f)
             )
         }
         ChoiceButton(
-            label = "Skip (Not Recommended)",
+            label = stringResource(R.string.oauth_zk_choice_skip),
             selected = selectedChoice == FirstTimeZeroKnowledgeChoice.SKIP,
             onClick = { onChoiceSelected(FirstTimeZeroKnowledgeChoice.SKIP) },
             modifier = Modifier.fillMaxWidth()

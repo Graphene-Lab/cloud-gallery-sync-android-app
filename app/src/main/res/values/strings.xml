@@ -1,3 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Graphene Photos</string>
+
+    <!-- Login Screen -->
+    <string name="login_auth_in_progress">Authentication in Progress. Please Wait…</string>
+    <string name="login_title">Graphene Photos</string>
+    <string name="login_subtitle">Private cloud backup. Keys stay on your phone.</string>
+    <string name="login_learn_more">Learn more</string>
+    <string name="login_sign_in_email">Sign In with Email</string>
+    <string name="login_have_desktop">Already have desktop client?</string>
+    <string name="login_connect_qr">Connect via QR Code</string>
+    <string name="login_privacy_title">How your photos stay private</string>
+    <string name="login_privacy_body">Photos are encrypted on your device before upload. Your encryption keys stay on your phone and are never sent to our servers. We store only encrypted files, so we cannot view your photos, unlike typical services such as Google Photos or OneDrive.</string>
+    <string name="login_error_title">Oops! Something went wrong</string>
+    <string name="login_try_again">Try Again</string>
+
+    <!-- Sync Screen -->
+    <string name="sync_title">Gallery Sync</string>
+    <string name="sync_profile_cd">Profile</string>
+    <string name="sync_status_label">Status:</string>
+    <string name="sync_success">Sync Successful, %1$d photos uploaded</string>
+    <string name="sync_no_photos">No photos to sync. Everything is up to date.</string>
+    <string name="sync_ready">Ready to Sync</string>
+    <string name="sync_in_progress">Sync in Progress</string>
+    <string name="sync_uploaded_photos">Uploaded Photos:</string>
+    <string name="sync_failed_photos">Failed Photos:</string>
+    <string name="sync_discovered_photos">Discovered Photos:</string>
+    <string name="sync_progress_info">Progress Info:</string>
+    <string name="sync_progress_waiting">waiting…</string>
+    <string name="sync_auto_label">Sync New Photos Automatically</string>
+    <string name="sync_auto_subtitle">Runs periodically in the background</string>
+    <string name="sync_manual_title">Manual Full Scan</string>
+    <string name="sync_manual_subtitle">Finds and uploads any photos missed in the past.</string>
+    <string name="sync_stop_full_scan">Stop Full Scan</string>
+    <string name="sync_start_full_scan">Start Full Scan</string>
+    <string name="sync_open_explorer">Open Explorer</string>
+    <string name="sync_download_explorer">Download Explorer</string>
+    <string name="sync_permission_denied">You denied granting permissions. Please go to settings to grant them.</string>
+
+    <!-- QR Scanner Screen -->
+    <string name="scan_connect_title">Connect to Your Cloud</string>
+    <string name="scan_step1">1. Open your desktop client and navigate to the QR code panel</string>
+    <string name="scan_step2">2. Scan the QR code below using your camera</string>
+    <string name="scan_step3">3. Enter the PIN from your authentication app</string>
+    <string name="scan_qr_sample_cd">Sample QR code</string>
+    <string name="scan_button">Scan QR Code</string>
+    <string name="scan_permission_denied">Camera permission denied. Please grant camera access and try again.</string>
+    <string name="scan_result_prefix">Scanned: %1$s</string>
+    <string name="scan_result_nothing">Nothing</string>
+
+    <!-- Auth (PIN) Screen -->
+    <string name="auth_pin_title">Enter Your PIN</string>
+    <string name="auth_pin_subtitle">Enter the 6-digit PIN from the cloud.</string>
+    <string name="auth_no_qr">No QR code provided. Please scan a QR code first.</string>
+    <string name="auth_continue">Continue</string>
+
+    <!-- Auth Zero-Knowledge Screen -->
+    <string name="auth_zk_title">Zero-Knowledge</string>
+    <string name="auth_zk_question">Was this account created with zero-knowledge encryption enabled?</string>
+    <string name="auth_zk_yes">Yes</string>
+    <string name="auth_zk_no">No</string>
+    <string name="auth_zk_passphrase_label">Zero-knowledge passphrase</string>
+    <string name="auth_zk_passphrase_placeholder">Enter the existing 12 or 24-word passphrase</string>
+    <string name="auth_zk_passphrase_support">Entering wrong passphrase will lead to authentication failure. Make sure to enter the exact passphrase used during account creation.</string>
+    <string name="auth_zk_authenticate">Authenticate</string>
+
+    <!-- OAuth Zero-Knowledge Setup Screen -->
+    <string name="oauth_zk_setup_title">Zero-Knowledge Setup</string>
+    <string name="oauth_zk_setup_subtitle">Finalize your account pairing by enabling Zero-Knowledge Encryption.</string>
+    <string name="oauth_zk_security_cd">Security details</string>
+    <string name="oauth_zk_how_works_title">How Zero-Knowledge Works</string>
+    <string name="oauth_zk_how_works_body">Your files are encrypted locally on your device before they are sent to our servers, ensuring only you can access your data; our servers never see it.\n\nYour passphrase derives a master key. From that master key, the app derives a unique encryption key for each file using the file name and file timestamp. This means files are not encrypted with one static key, which provides stronger isolation.</string>
+    <string name="oauth_zk_first_signin">This is my first Sign-In</string>
+    <string name="oauth_zk_choose_passphrase">Choose how to configure passphrase:</string>
+    <string name="oauth_zk_generated_passphrase_label">Generated passphrase (24 words):</string>
+    <string name="oauth_zk_regenerate_cd">Regenerate passphrase</string>
+    <string name="oauth_zk_copy_passphrase_cd">Copy passphrase</string>
+    <string name="oauth_zk_passphrase_copied">Passphrase copied</string>
+    <string name="oauth_zk_save_passphrase_warning">Important: Save this passphrase safely.</string>
+    <string name="oauth_zk_warning_cd">Passphrase warning details</string>
+    <string name="oauth_zk_passphrase_warning_title">Passphrase Warning</string>
+    <string name="oauth_zk_passphrase_warning_body">Do not lose this passphrase. Save it in a secure place. If you lose it, you can lose access to your encrypted files. This passphrase is not stored on our servers.</string>
+    <string name="oauth_zk_own_passphrase_label">Your passphrase</string>
+    <string name="oauth_zk_own_passphrase_placeholder">Enter 12 or 24-word passphrase</string>
+    <string name="oauth_zk_skip_warning">Encryption will be disabled for this session. This is not recommended.</string>
+    <string name="oauth_zk_existing_question">Was this account originally created with zero-knowledge encryption enabled?</string>
+    <string name="oauth_zk_existing_passphrase_label">Existing passphrase</string>
+    <string name="oauth_zk_existing_passphrase_placeholder">Enter the same passphrase used at account creation</string>
+    <string name="oauth_zk_cancel">Cancel</string>
+    <string name="oauth_zk_continue">Continue</string>
+    <string name="oauth_zk_pairing_failed">Pairing Failed</string>
+    <string name="oauth_zk_choice_generate">Generate</string>
+    <string name="oauth_zk_choice_use_mine">Use Mine</string>
+    <string name="oauth_zk_choice_skip">Skip (Not Recommended)</string>
+
+    <!-- Mnemonic Screen -->
+    <string name="mnemonic_secure_title">Secure Your Account</string>
+    <string name="mnemonic_secure_subtitle">Set up client-side encryption to protect your data</string>
+    <string name="mnemonic_generate_new">Generate New Passphrase</string>
+    <string name="mnemonic_recover_existing">Recover from Existing one</string>
+    <string name="mnemonic_skip">Skip (Not Recommended)</string>
+    <string name="mnemonic_choose_length_title">Choose Passphrase Length</string>
+    <string name="mnemonic_warning_text_pre">This passphrase is your </string>
+    <string name="mnemonic_warning_only">only</string>
+    <string name="mnemonic_warning_text_post"> way to recover your data. Write it down and keep it safe offline. Do NOT share it.</string>
+    <string name="mnemonic_generate_12">Generate 12-Word Passphrase</string>
+    <string name="mnemonic_generate_24">Generate 24-Word Passphrase</string>
+    <string name="mnemonic_recover_title">Recover Your Account</string>
+    <string name="mnemonic_recover_subtitle">Enter your 12 or 24-word recovery passphrase:</string>
+    <string name="mnemonic_recovery_passphrase_label">Recovery Passphrase</string>
+    <string name="mnemonic_recovering">Recovering…</string>
+    <string name="mnemonic_recover_button">Recover Account</string>
+    <string name="mnemonic_display_title">Your Recovery Passphrase</string>
+    <string name="mnemonic_copy_passphrase">Copy Passphrase</string>
+    <string name="mnemonic_passphrase_copied">Recovery passphrase copied to clipboard!</string>
+    <string name="mnemonic_i_saved">I have saved my passphrase, Continue</string>
+    <string name="mnemonic_back_cd">Back</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">Account Information</string>
+    <string name="profile_back_cd">Back</string>
+    <string name="profile_email_label">Email</string>
+    <string name="profile_loading">Loading…</string>
+    <string name="profile_cloud_credentials_title">Cloud Credentials</string>
+    <string name="profile_loading_credentials">Loading credentials…</string>
+    <string name="profile_no_credentials">No credentials saved</string>
+    <string name="profile_encrypted_qr">Encrypted QR code</string>
+    <string name="profile_copy_qr">Copy QR Code</string>
+    <string name="profile_pin_label">PIN</string>
+    <string name="profile_copy_pin">Copy PIN</string>
+    <string name="profile_current_plan_title">Current Plan</string>
+    <string name="profile_refresh_cd">Refresh</string>
+    <string name="profile_loading_plan">Loading plan…</string>
+    <string name="profile_clear_photos_title">Clear Synced Photos</string>
+    <string name="profile_clear_photos_subtitle">Delete already synced photos from your device gallery to free up space.</string>
+    <string name="profile_deleting">Deleting…</string>
+    <string name="profile_clear_synced_photos">Clear Synced Photos</string>
+    <string name="profile_delete_success">Successfully deleted %1$d photo(s)</string>
+    <string name="profile_no_synced_photos">No synced photos to delete</string>
+    <string name="profile_delete_photos_dialog_title">Delete Synced Photos?</string>
+    <string name="profile_delete_photos_dialog_body">This will permanently delete all synced photos from your device gallery. The photos will still be available in the cloud. This action cannot be undone.</string>
+    <string name="profile_delete_button">Delete</string>
+    <string name="profile_cancel_button">Cancel</string>
+    <string name="profile_danger_zone_title">Danger Zone</string>
+    <string name="profile_danger_zone_subtitle">Deleting your account is permanent and cannot be undone.</string>
+    <string name="profile_deleting_account">Deleting Account…</string>
+    <string name="profile_delete_account">Delete Account</string>
+    <string name="profile_delete_account_dialog_title">Delete Account?</string>
+    <string name="profile_delete_account_dialog_body">This action is permanent. Your account and synced data will be removed from this device.</string>
+    <string name="profile_delete_permanently">Delete Permanently</string>
+    <string name="profile_logout">Logout</string>
+    <string name="profile_copied_clipboard">%1$s copied to clipboard!</string>
+
+    <!-- Common -->
+    <string name="common_ok">OK</string>
+    <string name="common_error_prefix">Error: %1$s</string>
+    <string name="common_delete_cd">Delete</string>
 </resources>

@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,7 +55,7 @@ fun MnemonicScreen(
                     onClick = { mnemonicViewModel.goBack() },
                     modifier = Modifier.align(Alignment.Start)
                 ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.mnemonic_back_cd))
                 }
             }
 
@@ -110,13 +112,13 @@ private fun ChooseActionView(
     onSkip: () -> Unit
 ) {
     Text(
-        "Secure Your Account",
+        stringResource(R.string.mnemonic_secure_title),
         style = MaterialTheme.typography.headlineMedium
     )
     Spacer(modifier = Modifier.height(16.dp))
 
     Text(
-        "Set up client-side encryption to protect your data",
+        stringResource(R.string.mnemonic_secure_subtitle),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
@@ -132,14 +134,14 @@ private fun ChooseActionView(
             onClick = onGenerateNew,
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text("Generate New Passphrase")
+            Text(stringResource(R.string.mnemonic_generate_new))
         }
         
         OutlinedButton(
             onClick = onRecover,
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text("Recover from Existing one")
+            Text(stringResource(R.string.mnemonic_recover_existing))
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -149,7 +151,7 @@ private fun ChooseActionView(
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
             Text(
-                "Skip (Not Recommended)",
+                stringResource(R.string.mnemonic_skip),
                 color = MaterialTheme.colorScheme.error
             )
         }
@@ -159,7 +161,7 @@ private fun ChooseActionView(
 @Composable
 private fun WordCountSelectionView(onGenerate: (Int) -> Unit) {
     Text(
-        "Choose Passphrase Length",
+        stringResource(R.string.mnemonic_choose_length_title),
         style = MaterialTheme.typography.headlineMedium
     )
     Spacer(modifier = Modifier.height(16.dp))
@@ -170,7 +172,7 @@ private fun WordCountSelectionView(onGenerate: (Int) -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Default.Warning,
-            contentDescription = "Warning",
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier
                 .size(28.dp)
@@ -178,11 +180,11 @@ private fun WordCountSelectionView(onGenerate: (Int) -> Unit) {
         )
         Text(
             text = buildAnnotatedString {
-                append("This passphrase is your ")
+                append(stringResource(R.string.mnemonic_warning_text_pre))
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                    append("only")
+                    append(stringResource(R.string.mnemonic_warning_only))
                 }
-                append(" way to recover your data. Write it down and keep it safe offline. Do NOT share it.")
+                append(stringResource(R.string.mnemonic_warning_text_post))
             },
             textAlign = TextAlign.Start,
             color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
@@ -200,13 +202,13 @@ private fun WordCountSelectionView(onGenerate: (Int) -> Unit) {
             onClick = { onGenerate(12) },
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text("Generate 12-Word Passphrase")
+            Text(stringResource(R.string.mnemonic_generate_12))
         }
         Button(
             onClick = { onGenerate(24) },
             modifier = Modifier.fillMaxWidth(0.8f)
         ) {
-            Text("Generate 24-Word Passphrase")
+            Text(stringResource(R.string.mnemonic_generate_24))
         }
     }
 }
@@ -220,13 +222,13 @@ private fun RecoverInputView(
     onRecover: () -> Unit
 ) {
     Text(
-        "Recover Your Account",
+        stringResource(R.string.mnemonic_recover_title),
         style = MaterialTheme.typography.headlineMedium
     )
     Spacer(modifier = Modifier.height(16.dp))
     
     Text(
-        "Enter your 12 or 24-word recovery passphrase:",
+        stringResource(R.string.mnemonic_recover_subtitle),
         style = MaterialTheme.typography.bodyLarge
     )
     Spacer(modifier = Modifier.height(16.dp))
@@ -234,7 +236,7 @@ private fun RecoverInputView(
     OutlinedTextField(
         value = recoveryMnemonic,
         onValueChange = onMnemonicChange,
-        label = { Text("Recovery Passphrase") },
+        label = { Text(stringResource(R.string.mnemonic_recovery_passphrase_label)) },
         modifier = Modifier.fillMaxWidth(),
         minLines = 3,
         maxLines = 5,
@@ -266,7 +268,7 @@ private fun RecoverInputView(
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        Text(if (isRecovering) "Recovering..." else "Recover Account")
+        Text(if (isRecovering) stringResource(R.string.mnemonic_recovering) else stringResource(R.string.mnemonic_recover_button))
     }
 }
 
@@ -279,7 +281,7 @@ private fun MnemonicDisplay(
     val words = mnemonic.split(" ")
 
     Text(
-        "Your Recovery Passphrase",
+        stringResource(R.string.mnemonic_display_title),
         style = MaterialTheme.typography.headlineSmall
     )
     Spacer(modifier = Modifier.height(16.dp))
@@ -311,13 +313,13 @@ private fun MnemonicDisplay(
     OutlinedButton(
         onClick = {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Recovery Passphrase", mnemonic)
+            val clip = ClipData.newPlainText(context.getString(R.string.mnemonic_display_title), mnemonic)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(context, "Recovery passphrase copied to clipboard!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.mnemonic_passphrase_copied), Toast.LENGTH_SHORT).show()
         },
         modifier = Modifier.fillMaxWidth(0.8f)
     ) {
-        Text("Copy Passphrase")
+        Text(stringResource(R.string.mnemonic_copy_passphrase))
     }
     
     Spacer(modifier = Modifier.height(16.dp))
@@ -326,6 +328,6 @@ private fun MnemonicDisplay(
         onClick = onConfirm,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text("I have saved my passphrase, Continue")
+        Text(stringResource(R.string.mnemonic_i_saved))
     }
 }

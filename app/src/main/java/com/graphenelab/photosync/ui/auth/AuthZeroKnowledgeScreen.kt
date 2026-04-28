@@ -25,10 +25,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 
 @Composable
 fun AuthZeroKnowledgeScreen(
@@ -73,13 +75,13 @@ fun AuthZeroKnowledgeScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Zero-Knowledge",
+                    text = stringResource(R.string.auth_zk_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Was this account created with zero-knowledge encryption enabled?",
+                    text = stringResource(R.string.auth_zk_question),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
@@ -94,14 +96,14 @@ fun AuthZeroKnowledgeScreen(
                             onClick = { authViewModel.onUseZeroKnowledgeChanged(true) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(text = "Yes")
+                            Text(text = stringResource(R.string.auth_zk_yes))
                         }
                     } else {
                         OutlinedButton(
                             onClick = { authViewModel.onUseZeroKnowledgeChanged(true) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(text = "Yes")
+                            Text(text = stringResource(R.string.auth_zk_yes))
                         }
                     }
 
@@ -110,14 +112,14 @@ fun AuthZeroKnowledgeScreen(
                             onClick = { authViewModel.onUseZeroKnowledgeChanged(false) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(text = "No")
+                            Text(text = stringResource(R.string.auth_zk_no))
                         }
                     } else {
                         Button(
                             onClick = { authViewModel.onUseZeroKnowledgeChanged(false) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(text = "No")
+                            Text(text = stringResource(R.string.auth_zk_no))
                         }
                     }
                 }
@@ -128,10 +130,10 @@ fun AuthZeroKnowledgeScreen(
                         value = uiState.zeroKnowledgePassphrase,
                         onValueChange = { authViewModel.onZeroKnowledgePassphraseChanged(it) },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Zero-knowledge passphrase") },
-                        placeholder = { Text("Enter the existing 12 or 24-word passphrase") },
+                        label = { Text(stringResource(R.string.auth_zk_passphrase_label)) },
+                        placeholder = { Text(stringResource(R.string.auth_zk_passphrase_placeholder)) },
                         supportingText = {
-                            Text("Entering wrong passphrase will lead to authentication failure. Make sure to enter the exact passphrase used during account creation.")
+                            Text(stringResource(R.string.auth_zk_passphrase_support))
                         },
                         minLines = 3
                     )
@@ -140,7 +142,7 @@ fun AuthZeroKnowledgeScreen(
                 if (!isQrAvailable) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No QR code provided. Please scan a QR code first.",
+                        text = stringResource(R.string.auth_no_qr),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
@@ -176,7 +178,7 @@ fun AuthZeroKnowledgeScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text(text = "Authenticate", fontSize = 16.sp)
+                            Text(text = stringResource(R.string.auth_zk_authenticate), fontSize = 16.sp)
                         }
                     }
                 }

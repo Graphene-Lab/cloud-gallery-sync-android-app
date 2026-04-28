@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Graphene Photos</string>
+
+    <!-- Login Screen -->
+    <string name="login_auth_in_progress">Authentification en cours. Veuillez patienter…</string>
+    <string name="login_title">Graphene Photos</string>
+    <string name="login_subtitle">Sauvegarde cloud privée. Les clés restent sur votre téléphone.</string>
+    <string name="login_learn_more">En savoir plus</string>
+    <string name="login_sign_in_email">Se connecter avec l\'e-mail</string>
+    <string name="login_have_desktop">Vous avez déjà le client de bureau ?</string>
+    <string name="login_connect_qr">Connecter via QR Code</string>
+    <string name="login_privacy_title">Comment vos photos restent privées</string>
+    <string name="login_privacy_body">Les photos sont chiffrées sur votre appareil avant le téléchargement. Vos clés de chiffrement restent sur votre téléphone et ne sont jamais envoyées à nos serveurs. Nous stockons uniquement des fichiers chiffrés, donc nous ne pouvons pas voir vos photos, contrairement à des services comme Google Photos ou OneDrive.</string>
+    <string name="login_error_title">Oups ! Quelque chose s\'est mal passé</string>
+    <string name="login_try_again">Réessayer</string>
+
+    <!-- Sync Screen -->
+    <string name="sync_title">Synchronisation de la galerie</string>
+    <string name="sync_profile_cd">Profil</string>
+    <string name="sync_status_label">Statut :</string>
+    <string name="sync_success">Synchronisation réussie, %1$d photos téléchargées</string>
+    <string name="sync_no_photos">Aucune photo à synchroniser. Tout est à jour.</string>
+    <string name="sync_ready">Prêt à synchroniser</string>
+    <string name="sync_in_progress">Synchronisation en cours</string>
+    <string name="sync_uploaded_photos">Photos téléchargées :</string>
+    <string name="sync_failed_photos">Photos échouées :</string>
+    <string name="sync_discovered_photos">Photos découvertes :</string>
+    <string name="sync_progress_info">Informations sur la progression :</string>
+    <string name="sync_progress_waiting">en attente…</string>
+    <string name="sync_auto_label">Synchroniser automatiquement les nouvelles photos</string>
+    <string name="sync_auto_subtitle">S\'exécute périodiquement en arrière-plan</string>
+    <string name="sync_manual_title">Analyse complète manuelle</string>
+    <string name="sync_manual_subtitle">Trouve et télécharge les photos manquées par le passé.</string>
+    <string name="sync_stop_full_scan">Arrêter l\'analyse complète</string>
+    <string name="sync_start_full_scan">Démarrer l\'analyse complète</string>
+    <string name="sync_open_explorer">Ouvrir l\'Explorateur</string>
+    <string name="sync_download_explorer">Télécharger l\'Explorateur</string>
+    <string name="sync_permission_denied">Vous avez refusé les autorisations. Veuillez accéder aux paramètres pour les accorder.</string>
+
+    <!-- QR Scanner Screen -->
+    <string name="scan_connect_title">Se connecter à votre cloud</string>
+    <string name="scan_step1">1. Ouvrez votre client de bureau et accédez au panneau QR code</string>
+    <string name="scan_step2">2. Scannez le QR code ci-dessous avec votre appareil photo</string>
+    <string name="scan_step3">3. Saisissez le code PIN depuis votre application d\'authentification</string>
+    <string name="scan_qr_sample_cd">Exemple de QR code</string>
+    <string name="scan_button">Scanner le QR Code</string>
+    <string name="scan_permission_denied">Permission de caméra refusée. Veuillez autoriser l\'accès à la caméra et réessayer.</string>
+    <string name="scan_result_prefix">Scanné : %1$s</string>
+    <string name="scan_result_nothing">Rien</string>
+
+    <!-- Auth (PIN) Screen -->
+    <string name="auth_pin_title">Saisissez votre PIN</string>
+    <string name="auth_pin_subtitle">Entrez le PIN à 6 chiffres depuis le cloud.</string>
+    <string name="auth_no_qr">Aucun QR code fourni. Veuillez d\'abord scanner un QR code.</string>
+    <string name="auth_continue">Continuer</string>
+
+    <!-- Auth Zero-Knowledge Screen -->
+    <string name="auth_zk_title">Zero-Knowledge</string>
+    <string name="auth_zk_question">Ce compte a-t-il été créé avec Zero-Knowledge Encryption activé ?</string>
+    <string name="auth_zk_yes">Oui</string>
+    <string name="auth_zk_no">Non</string>
+    <string name="auth_zk_passphrase_label">Zero-Knowledge Passphrase</string>
+    <string name="auth_zk_passphrase_placeholder">Entrez la phrase existante de 12 ou 24 mots</string>
+    <string name="auth_zk_passphrase_support">Saisir une mauvaise phrase secrète entraînera un échec d\'authentification. Assurez-vous de saisir la phrase exacte utilisée lors de la création du compte.</string>
+    <string name="auth_zk_authenticate">S\'authentifier</string>
+
+    <!-- OAuth Zero-Knowledge Setup Screen -->
+    <string name="oauth_zk_setup_title">Zero-Knowledge Setup</string>
+    <string name="oauth_zk_setup_subtitle">Finalisez le jumelage de votre compte en activant Zero-Knowledge Encryption.</string>
+    <string name="oauth_zk_security_cd">Détails de sécurité</string>
+    <string name="oauth_zk_how_works_title">How Zero-Knowledge Works</string>
+    <string name="oauth_zk_how_works_body">Vos fichiers sont chiffrés localement sur votre appareil avant d\'être envoyés à nos serveurs, garantissant que seul vous pouvez accéder à vos données ; nos serveurs ne les voient jamais.\n\nVotre phrase secrète dérive une clé maître. À partir de cette clé maître, l\'application dérive une clé de chiffrement unique pour chaque fichier en utilisant le nom et l\'horodatage du fichier. Cela signifie que les fichiers ne sont pas chiffrés avec une seule clé statique, ce qui offre une isolation plus forte.</string>
+    <string name="oauth_zk_first_signin">C\'est ma première connexion</string>
+    <string name="oauth_zk_choose_passphrase">Choisissez comment configurer la phrase secrète :</string>
+    <string name="oauth_zk_generated_passphrase_label">Phrase secrète générée (24 mots) :</string>
+    <string name="oauth_zk_regenerate_cd">Régénérer la phrase secrète</string>
+    <string name="oauth_zk_copy_passphrase_cd">Copier la phrase secrète</string>
+    <string name="oauth_zk_passphrase_copied">Phrase secrète copiée</string>
+    <string name="oauth_zk_save_passphrase_warning">Important : sauvegardez cette phrase secrète en lieu sûr.</string>
+    <string name="oauth_zk_warning_cd">Détails de l\'avertissement sur la phrase secrète</string>
+    <string name="oauth_zk_passphrase_warning_title">Avertissement sur la phrase secrète</string>
+    <string name="oauth_zk_passphrase_warning_body">Ne perdez pas cette phrase secrète. Sauvegardez-la dans un endroit sécurisé. Si vous la perdez, vous pouvez perdre l\'accès à vos fichiers chiffrés. Cette phrase secrète n\'est pas stockée sur nos serveurs.</string>
+    <string name="oauth_zk_own_passphrase_label">Votre phrase secrète</string>
+    <string name="oauth_zk_own_passphrase_placeholder">Entrez une phrase secrète de 12 ou 24 mots</string>
+    <string name="oauth_zk_skip_warning">Le chiffrement sera désactivé pour cette session. Cela n\'est pas recommandé.</string>
+    <string name="oauth_zk_existing_question">Ce compte a-t-il été créé à l\'origine avec Zero-Knowledge Encryption activé ?</string>
+    <string name="oauth_zk_existing_passphrase_label">Phrase secrète existante</string>
+    <string name="oauth_zk_existing_passphrase_placeholder">Entrez la même phrase secrète utilisée lors de la création du compte</string>
+    <string name="oauth_zk_cancel">Annuler</string>
+    <string name="oauth_zk_continue">Continuer</string>
+    <string name="oauth_zk_pairing_failed">Échec du jumelage</string>
+    <string name="oauth_zk_choice_generate">Générer</string>
+    <string name="oauth_zk_choice_use_mine">Utiliser la mienne</string>
+    <string name="oauth_zk_choice_skip">Ignorer (Non recommandé)</string>
+
+    <!-- Mnemonic Screen -->
+    <string name="mnemonic_secure_title">Sécurisez votre compte</string>
+    <string name="mnemonic_secure_subtitle">Configurez le chiffrement côté client pour protéger vos données</string>
+    <string name="mnemonic_generate_new">Générer une nouvelle phrase secrète</string>
+    <string name="mnemonic_recover_existing">Récupérer depuis une existante</string>
+    <string name="mnemonic_skip">Ignorer (Non recommandé)</string>
+    <string name="mnemonic_choose_length_title">Choisissez la longueur de la phrase secrète</string>
+    <string name="mnemonic_warning_text_pre">Cette phrase secrète est votre </string>
+    <string name="mnemonic_warning_only">seul</string>
+    <string name="mnemonic_warning_text_post"> moyen de récupérer vos données. Notez-la et conservez-la en lieu sûr hors ligne. Ne la partagez PAS.</string>
+    <string name="mnemonic_generate_12">Générer une phrase de 12 mots</string>
+    <string name="mnemonic_generate_24">Générer une phrase de 24 mots</string>
+    <string name="mnemonic_recover_title">Récupérer votre compte</string>
+    <string name="mnemonic_recover_subtitle">Entrez votre phrase de récupération de 12 ou 24 mots :</string>
+    <string name="mnemonic_recovery_passphrase_label">Phrase de récupération</string>
+    <string name="mnemonic_recovering">Récupération en cours…</string>
+    <string name="mnemonic_recover_button">Récupérer le compte</string>
+    <string name="mnemonic_display_title">Votre phrase de récupération</string>
+    <string name="mnemonic_copy_passphrase">Copier la phrase</string>
+    <string name="mnemonic_passphrase_copied">Phrase de récupération copiée dans le presse-papiers !</string>
+    <string name="mnemonic_i_saved">J\'ai sauvegardé ma phrase, Continuer</string>
+    <string name="mnemonic_back_cd">Retour</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">Informations du compte</string>
+    <string name="profile_back_cd">Retour</string>
+    <string name="profile_email_label">E-mail</string>
+    <string name="profile_loading">Chargement…</string>
+    <string name="profile_cloud_credentials_title">Identifiants cloud</string>
+    <string name="profile_loading_credentials">Chargement des identifiants…</string>
+    <string name="profile_no_credentials">Aucun identifiant sauvegardé</string>
+    <string name="profile_encrypted_qr">QR code chiffré</string>
+    <string name="profile_copy_qr">Copier le QR Code</string>
+    <string name="profile_pin_label">PIN</string>
+    <string name="profile_copy_pin">Copier le PIN</string>
+    <string name="profile_current_plan_title">Plan actuel</string>
+    <string name="profile_refresh_cd">Actualiser</string>
+    <string name="profile_loading_plan">Chargement du plan…</string>
+    <string name="profile_clear_photos_title">Effacer les photos synchronisées</string>
+    <string name="profile_clear_photos_subtitle">Supprimez les photos déjà synchronisées de la galerie de votre appareil pour libérer de l\'espace.</string>
+    <string name="profile_deleting">Suppression…</string>
+    <string name="profile_clear_synced_photos">Effacer les photos synchronisées</string>
+    <string name="profile_delete_success">%1$d photo(s) supprimée(s) avec succès</string>
+    <string name="profile_no_synced_photos">Aucune photo synchronisée à supprimer</string>
+    <string name="profile_delete_photos_dialog_title">Supprimer les photos synchronisées ?</string>
+    <string name="profile_delete_photos_dialog_body">Cela supprimera définitivement toutes les photos synchronisées de la galerie de votre appareil. Les photos resteront disponibles dans le cloud. Cette action ne peut pas être annulée.</string>
+    <string name="profile_delete_button">Supprimer</string>
+    <string name="profile_cancel_button">Annuler</string>
+    <string name="profile_danger_zone_title">Zone dangereuse</string>
+    <string name="profile_danger_zone_subtitle">La suppression de votre compte est définitive et ne peut pas être annulée.</string>
+    <string name="profile_deleting_account">Suppression du compte…</string>
+    <string name="profile_delete_account">Supprimer le compte</string>
+    <string name="profile_delete_account_dialog_title">Supprimer le compte ?</string>
+    <string name="profile_delete_account_dialog_body">Cette action est définitive. Votre compte et vos données synchronisées seront supprimés de cet appareil.</string>
+    <string name="profile_delete_permanently">Supprimer définitivement</string>
+    <string name="profile_logout">Se déconnecter</string>
+    <string name="profile_copied_clipboard">%1$s copié dans le presse-papiers !</string>
+
+    <!-- Common -->
+    <string name="common_ok">OK</string>
+    <string name="common_error_prefix">Erreur : %1$s</string>
+    <string name="common_delete_cd">Supprimer</string>
+</resources>

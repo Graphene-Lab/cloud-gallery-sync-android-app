@@ -39,9 +39,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 import com.graphenelab.photosync.BuildConfig
 
 private const val TAG = "LoginScreen"
@@ -89,7 +91,7 @@ fun LoginScreen(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Authentication in Progress. Please Wait...",
+                            text = stringResource(R.string.login_auth_in_progress),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -102,7 +104,7 @@ fun LoginScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Graphene Photos",
+                            text = stringResource(R.string.login_title),
                             style = MaterialTheme.typography.headlineMedium,
                             textAlign = TextAlign.Center
                         )
@@ -115,7 +117,7 @@ fun LoginScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Private cloud backup. Keys stay on your phone.",
+                                text = stringResource(R.string.login_subtitle),
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center
                             )
@@ -126,7 +128,7 @@ fun LoginScreen(
                                 contentDescription = null
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Learn more")
+                            Text(stringResource(R.string.login_learn_more))
                         }
                         Spacer(modifier = Modifier.height(32.dp))
                         Button(onClick = {
@@ -136,35 +138,29 @@ fun LoginScreen(
                             val authIntent = viewModel.getAuthIntent()
                             authLauncher.launch(authIntent)
                         }) {
-                            Text("Sign In with Email")
+                            Text(stringResource(R.string.login_sign_in_email))
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Already have desktop client?",
+                            text = stringResource(R.string.login_have_desktop),
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedButton(onClick = onNavigateToScan) {
-                            Text("Connect via QR Code")
+                            Text(stringResource(R.string.login_connect_qr))
                         }
 
                         if (showPrivacyInfo) {
                             AlertDialog(
                                 onDismissRequest = { showPrivacyInfo = false },
-                                title = { Text("How your photos stay private") },
+                                title = { Text(stringResource(R.string.login_privacy_title)) },
                                 text = {
-                                    Text(
-                                        "Photos are encrypted on your device before upload. " +
-                                            "Your encryption keys stay on your phone and are never " +
-                                            "sent to our servers. We store only encrypted files, so " +
-                                            "we cannot view your photos, unlike typical services such " +
-                                            "as Google Photos or OneDrive."
-                                    )
+                                    Text(stringResource(R.string.login_privacy_body))
                                 },
                                 confirmButton = {
                                     TextButton(onClick = { showPrivacyInfo = false }) {
-                                        Text("OK")
+                                        Text(stringResource(R.string.common_ok))
                                     }
                                 }
                             )
@@ -206,7 +202,7 @@ fun LoginScreen(
                                     modifier = Modifier.height(48.dp)
                                 )
                                 Text(
-                                    text = "Oops! Something went wrong",
+                                    text = stringResource(R.string.login_error_title),
                                     style = MaterialTheme.typography.headlineSmall,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     textAlign = TextAlign.Center
@@ -239,7 +235,7 @@ fun LoginScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Try Again",
+                                text = stringResource(R.string.login_try_again),
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }

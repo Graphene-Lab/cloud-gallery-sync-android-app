@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Graphene Photos</string>
+
+    <!-- Login Screen -->
+    <string name="login_auth_in_progress">Аутентификация в процессе. Пожалуйста, подождите…</string>
+    <string name="login_title">Graphene Photos</string>
+    <string name="login_subtitle">Приватное облачное хранилище. Ключи остаются на вашем телефоне.</string>
+    <string name="login_learn_more">Узнать больше</string>
+    <string name="login_sign_in_email">Войти по электронной почте</string>
+    <string name="login_have_desktop">Уже есть десктопный клиент?</string>
+    <string name="login_connect_qr">Подключиться по QR-коду</string>
+    <string name="login_privacy_title">Как ваши фото остаются в безопасности</string>
+    <string name="login_privacy_body">Фотографии шифруются на вашем устройстве перед загрузкой. Ключи шифрования остаются на вашем телефоне и никогда не передаются на наши серверы. Мы храним только зашифрованные файлы, поэтому не можем просматривать ваши фото — в отличие от таких сервисов, как Google Фото или OneDrive.</string>
+    <string name="login_error_title">Упс! Что-то пошло не так</string>
+    <string name="login_try_again">Попробовать снова</string>
+
+    <!-- Sync Screen -->
+    <string name="sync_title">Синхронизация галереи</string>
+    <string name="sync_profile_cd">Профиль</string>
+    <string name="sync_status_label">Статус:</string>
+    <string name="sync_success">Синхронизация завершена, загружено %1$d фото</string>
+    <string name="sync_no_photos">Нет фото для синхронизации. Всё актуально.</string>
+    <string name="sync_ready">Готово к синхронизации</string>
+    <string name="sync_in_progress">Синхронизация в процессе</string>
+    <string name="sync_uploaded_photos">Загружено фото:</string>
+    <string name="sync_failed_photos">Ошибки загрузки:</string>
+    <string name="sync_discovered_photos">Обнаружено фото:</string>
+    <string name="sync_progress_info">Информация о прогрессе:</string>
+    <string name="sync_progress_waiting">ожидание…</string>
+    <string name="sync_auto_label">Автоматически синхронизировать новые фото</string>
+    <string name="sync_auto_subtitle">Работает периодически в фоновом режиме</string>
+    <string name="sync_manual_title">Ручное полное сканирование</string>
+    <string name="sync_manual_subtitle">Находит и загружает фото, пропущенные ранее.</string>
+    <string name="sync_stop_full_scan">Остановить полное сканирование</string>
+    <string name="sync_start_full_scan">Начать полное сканирование</string>
+    <string name="sync_open_explorer">Открыть Проводник</string>
+    <string name="sync_download_explorer">Скачать Проводник</string>
+    <string name="sync_permission_denied">Вы отклонили предоставление разрешений. Пожалуйста, перейдите в настройки, чтобы их предоставить.</string>
+
+    <!-- QR Scanner Screen -->
+    <string name="scan_connect_title">Подключение к вашему облаку</string>
+    <string name="scan_step1">1. Откройте десктопный клиент и перейдите на панель с QR-кодом</string>
+    <string name="scan_step2">2. Отсканируйте QR-код ниже с помощью камеры</string>
+    <string name="scan_step3">3. Введите PIN-код из вашего приложения аутентификации</string>
+    <string name="scan_qr_sample_cd">Образец QR-кода</string>
+    <string name="scan_button">Сканировать QR-код</string>
+    <string name="scan_permission_denied">Доступ к камере запрещён. Пожалуйста, предоставьте разрешение и попробуйте снова.</string>
+    <string name="scan_result_prefix">Отсканировано: %1$s</string>
+    <string name="scan_result_nothing">Ничего</string>
+
+    <!-- Auth (PIN) Screen -->
+    <string name="auth_pin_title">Введите ваш PIN-код</string>
+    <string name="auth_pin_subtitle">Введите 6-значный PIN-код из облака.</string>
+    <string name="auth_no_qr">QR-код не предоставлен. Пожалуйста, сначала отсканируйте QR-код.</string>
+    <string name="auth_continue">Продолжить</string>
+
+    <!-- Auth Zero-Knowledge Screen -->
+    <string name="auth_zk_title">Zero-Knowledge</string>
+    <string name="auth_zk_question">Был ли этот аккаунт создан с включённым Zero-Knowledge Encryption?</string>
+    <string name="auth_zk_yes">Да</string>
+    <string name="auth_zk_no">Нет</string>
+    <string name="auth_zk_passphrase_label">Zero-Knowledge Passphrase</string>
+    <string name="auth_zk_passphrase_placeholder">Введите существующую фразу из 12 или 24 слов</string>
+    <string name="auth_zk_passphrase_support">Ввод неверной парольной фразы приведёт к ошибке аутентификации. Убедитесь, что вводите точную фразу, использованную при создании аккаунта.</string>
+    <string name="auth_zk_authenticate">Аутентифицироваться</string>
+
+    <!-- OAuth Zero-Knowledge Setup Screen -->
+    <string name="oauth_zk_setup_title">Zero-Knowledge Setup</string>
+    <string name="oauth_zk_setup_subtitle">Завершите сопряжение аккаунта, включив Zero-Knowledge Encryption.</string>
+    <string name="oauth_zk_security_cd">Сведения о безопасности</string>
+    <string name="oauth_zk_how_works_title">How Zero-Knowledge Works</string>
+    <string name="oauth_zk_how_works_body">Ваши файлы шифруются локально на вашем устройстве перед отправкой на наши серверы, что гарантирует, что только вы можете получить доступ к своим данным; наши серверы их никогда не видят.\n\nВаша парольная фраза формирует мастер-ключ. На его основе приложение создаёт уникальный ключ шифрования для каждого файла, используя имя файла и временную метку. Таким образом, файлы шифруются не одним статическим ключом, что обеспечивает более высокую изоляцию.</string>
+    <string name="oauth_zk_first_signin">Это мой первый вход</string>
+    <string name="oauth_zk_choose_passphrase">Выберите способ настройки парольной фразы:</string>
+    <string name="oauth_zk_generated_passphrase_label">Сгенерированная парольная фраза (24 слова):</string>
+    <string name="oauth_zk_regenerate_cd">Сгенерировать заново</string>
+    <string name="oauth_zk_copy_passphrase_cd">Скопировать парольную фразу</string>
+    <string name="oauth_zk_passphrase_copied">Парольная фраза скопирована</string>
+    <string name="oauth_zk_save_passphrase_warning">Важно: сохраните эту парольную фразу в безопасном месте.</string>
+    <string name="oauth_zk_warning_cd">Подробности предупреждения о парольной фразе</string>
+    <string name="oauth_zk_passphrase_warning_title">Предупреждение о парольной фразе</string>
+    <string name="oauth_zk_passphrase_warning_body">Не теряйте эту парольную фразу. Сохраните её в надёжном месте. Если вы её потеряете, вы можете потерять доступ к зашифрованным файлам. Эта парольная фраза не хранится на наших серверах.</string>
+    <string name="oauth_zk_own_passphrase_label">Ваша парольная фраза</string>
+    <string name="oauth_zk_own_passphrase_placeholder">Введите парольную фразу из 12 или 24 слов</string>
+    <string name="oauth_zk_skip_warning">Шифрование будет отключено для этой сессии. Это не рекомендуется.</string>
+    <string name="oauth_zk_existing_question">Был ли этот аккаунт изначально создан с включённым Zero-Knowledge Encryption?</string>
+    <string name="oauth_zk_existing_passphrase_label">Существующая парольная фраза</string>
+    <string name="oauth_zk_existing_passphrase_placeholder">Введите ту же парольную фразу, что использовалась при создании аккаунта</string>
+    <string name="oauth_zk_cancel">Отмена</string>
+    <string name="oauth_zk_continue">Продолжить</string>
+    <string name="oauth_zk_pairing_failed">Ошибка сопряжения</string>
+    <string name="oauth_zk_choice_generate">Сгенерировать</string>
+    <string name="oauth_zk_choice_use_mine">Использовать мою</string>
+    <string name="oauth_zk_choice_skip">Пропустить (не рекомендуется)</string>
+
+    <!-- Mnemonic Screen -->
+    <string name="mnemonic_secure_title">Защитите ваш аккаунт</string>
+    <string name="mnemonic_secure_subtitle">Настройте шифрование на стороне клиента для защиты ваших данных</string>
+    <string name="mnemonic_generate_new">Создать новую парольную фразу</string>
+    <string name="mnemonic_recover_existing">Восстановить из существующей</string>
+    <string name="mnemonic_skip">Пропустить (не рекомендуется)</string>
+    <string name="mnemonic_choose_length_title">Выберите длину парольной фразы</string>
+    <string name="mnemonic_warning_text_pre">Эта парольная фраза — ваш </string>
+    <string name="mnemonic_warning_only">единственный</string>
+    <string name="mnemonic_warning_text_post"> способ восстановить данные. Запишите её и храните в безопасном месте офлайн. НЕ сообщайте её никому.</string>
+    <string name="mnemonic_generate_12">Сгенерировать фразу из 12 слов</string>
+    <string name="mnemonic_generate_24">Сгенерировать фразу из 24 слов</string>
+    <string name="mnemonic_recover_title">Восстановление аккаунта</string>
+    <string name="mnemonic_recover_subtitle">Введите вашу парольную фразу из 12 или 24 слов:</string>
+    <string name="mnemonic_recovery_passphrase_label">Фраза восстановления</string>
+    <string name="mnemonic_recovering">Восстановление…</string>
+    <string name="mnemonic_recover_button">Восстановить аккаунт</string>
+    <string name="mnemonic_display_title">Ваша фраза восстановления</string>
+    <string name="mnemonic_copy_passphrase">Скопировать фразу</string>
+    <string name="mnemonic_passphrase_copied">Фраза восстановления скопирована в буфер обмена!</string>
+    <string name="mnemonic_i_saved">Я сохранил фразу, продолжить</string>
+    <string name="mnemonic_back_cd">Назад</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">Информация об аккаунте</string>
+    <string name="profile_back_cd">Назад</string>
+    <string name="profile_email_label">Электронная почта</string>
+    <string name="profile_loading">Загрузка…</string>
+    <string name="profile_cloud_credentials_title">Облачные учётные данные</string>
+    <string name="profile_loading_credentials">Загрузка учётных данных…</string>
+    <string name="profile_no_credentials">Учётные данные не сохранены</string>
+    <string name="profile_encrypted_qr">Зашифрованный QR-код</string>
+    <string name="profile_copy_qr">Скопировать QR-код</string>
+    <string name="profile_pin_label">PIN-код</string>
+    <string name="profile_copy_pin">Скопировать PIN-код</string>
+    <string name="profile_current_plan_title">Текущий план</string>
+    <string name="profile_refresh_cd">Обновить</string>
+    <string name="profile_loading_plan">Загрузка плана…</string>
+    <string name="profile_clear_photos_title">Очистить синхронизированные фото</string>
+    <string name="profile_clear_photos_subtitle">Удалите уже синхронизированные фото с галереи устройства, чтобы освободить место.</string>
+    <string name="profile_deleting">Удаление…</string>
+    <string name="profile_clear_synced_photos">Очистить синхронизированные фото</string>
+    <string name="profile_delete_success">Успешно удалено %1$d фото</string>
+    <string name="profile_no_synced_photos">Нет синхронизированных фото для удаления</string>
+    <string name="profile_delete_photos_dialog_title">Удалить синхронизированные фото?</string>
+    <string name="profile_delete_photos_dialog_body">Это безвозвратно удалит все синхронизированные фото из галереи устройства. Фото по-прежнему будут доступны в облаке. Действие нельзя отменить.</string>
+    <string name="profile_delete_button">Удалить</string>
+    <string name="profile_cancel_button">Отмена</string>
+    <string name="profile_danger_zone_title">Опасная зона</string>
+    <string name="profile_danger_zone_subtitle">Удаление аккаунта необратимо и не может быть отменено.</string>
+    <string name="profile_deleting_account">Удаление аккаунта…</string>
+    <string name="profile_delete_account">Удалить аккаунт</string>
+    <string name="profile_delete_account_dialog_title">Удалить аккаунт?</string>
+    <string name="profile_delete_account_dialog_body">Это действие необратимо. Ваш аккаунт и синхронизированные данные будут удалены с устройства.</string>
+    <string name="profile_delete_permanently">Удалить навсегда</string>
+    <string name="profile_logout">Выйти</string>
+    <string name="profile_copied_clipboard">%1$s скопировано в буфер обмена!</string>
+
+    <!-- Common -->
+    <string name="common_ok">ОК</string>
+    <string name="common_error_prefix">Ошибка: %1$s</string>
+    <string name="common_delete_cd">Удалить</string>
+</resources>

@@ -15,9 +15,11 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,10 +51,10 @@ fun SyncScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gallery Sync") },
+                title = { Text(stringResource(R.string.sync_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateToProfile) {
-                        Icon(Icons.Default.Person, contentDescription = "Profile")
+                        Icon(Icons.Default.Person, contentDescription = stringResource(R.string.sync_profile_cd))
                     }
                 }
             )
@@ -72,24 +74,24 @@ fun SyncScreen(
             ) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text(text = "Status:", style = MaterialTheme.typography.titleMedium)
+                        Text(text = stringResource(R.string.sync_status_label), style = MaterialTheme.typography.titleMedium)
                         if (!uiState.isFullScanInProgress) {
                             if (uiState.completedPhotos > 0) {
                                 Text(
-                                    text = "Sync Successful, ${uiState.completedPhotos} photos uploaded",
+                                    text = stringResource(R.string.sync_success, uiState.completedPhotos),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             } else {
                                 if (uiState.noPhotosToSync) {
                                     Text(
-                                        text = "No photos to sync. Everything is up to date.",
+                                        text = stringResource(R.string.sync_no_photos),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 } else {
                                     Text(
-                                        text = "Ready to Sync",
+                                        text = stringResource(R.string.sync_ready),
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(top = 4.dp)
                                     )
@@ -99,13 +101,13 @@ fun SyncScreen(
 
                         } else {
                             Text(
-                                text = "Sync in Progress",
+                                text = stringResource(R.string.sync_in_progress),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                             Row {
                                 Text(
-                                    text = "Uploaded Photos:",
+                                    text = stringResource(R.string.sync_uploaded_photos),
                                     style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
@@ -115,7 +117,7 @@ fun SyncScreen(
                             }
                             Row {
                                 Text(
-                                    text = "Failed Photos:",
+                                    text = stringResource(R.string.sync_failed_photos),
                                     style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
@@ -125,7 +127,7 @@ fun SyncScreen(
                             }
                             Row {
                                 Text(
-                                    text = "Discovered Photos:",
+                                    text = stringResource(R.string.sync_discovered_photos),
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                                 Text(
@@ -135,10 +137,10 @@ fun SyncScreen(
                             }
 
                             Column {
-                                Text(text = "Progress Info:")
+                                Text(text = stringResource(R.string.sync_progress_info))
                                 Text(text = uiState.progress?.let { progress ->
                                     "${progress.filename} ${progress.currentChunk}/${progress.totalChunks}"
-                                } ?: "waiting...")
+                                } ?: stringResource(R.string.sync_progress_waiting))
                             }
                         }
                     }
@@ -154,11 +156,11 @@ fun SyncScreen(
                 ) {
                     Column {
                         Text(
-                            "Sync New Photos Automatically",
+                            stringResource(R.string.sync_auto_label),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            "Runs periodically in the background",
+                            stringResource(R.string.sync_auto_subtitle),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -171,9 +173,9 @@ fun SyncScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
 
-                Text("Manual Full Scan", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.sync_manual_title), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Finds and uploads any photos missed in the past.",
+                    stringResource(R.string.sync_manual_subtitle),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
                 )
@@ -200,11 +202,10 @@ fun SyncScreen(
                             strokeWidth = 3.dp
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Stop Full Scan")
+                        Text(stringResource(R.string.sync_stop_full_scan))
                     } else {
-                        Text("Start Full Scan")
+                        Text(stringResource(R.string.sync_start_full_scan))
                     }
-
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -215,13 +216,13 @@ fun SyncScreen(
                         .fillMaxWidth(0.8f)
                         .height(48.dp)
                 ) {
-                    Text(if (uiState.isExplorerInstalled) "Open Explorer" else "Download Explorer")
+                    Text(if (uiState.isExplorerInstalled) stringResource(R.string.sync_open_explorer) else stringResource(R.string.sync_download_explorer))
                 }
 
                 if (uiState.permissionDenied) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
                     Text(
-                        text = " You denied granting permissions. Please go to settings to grant them.",
+                        text = stringResource(R.string.sync_permission_denied),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 4.dp),
                         color = MaterialTheme.colorScheme.error,

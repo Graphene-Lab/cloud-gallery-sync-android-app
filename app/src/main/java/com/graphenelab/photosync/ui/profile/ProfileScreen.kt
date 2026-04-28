@@ -30,9 +30,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,16 +115,16 @@ fun ProfileScreen(
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, value)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.profile_copied_clipboard, label), Toast.LENGTH_SHORT).show()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Account Information") },
+                title = { Text(stringResource(R.string.profile_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.profile_back_cd))
                     }
                 }
             )
@@ -140,12 +142,12 @@ fun ProfileScreen(
             if (!uiState.isQrLoginMode) {
                 // Email Section
                 Text(
-                    text = "Email",
+                    text = stringResource(R.string.profile_email_label),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = uiState.email ?: "Loading...",
+                    text = uiState.email ?: stringResource(R.string.profile_loading),
                     style = MaterialTheme.typography.bodyLarge
                 )
 
@@ -161,7 +163,7 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Cloud Credentials",
+                        text = stringResource(R.string.profile_cloud_credentials_title),
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -171,13 +173,13 @@ fun ProfileScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Loading credentials...")
+                                Text(stringResource(R.string.profile_loading_credentials))
                             }
                         }
 
                         uiState.credentialsError != null -> {
                             Text(
-                                text = "Error: ${uiState.credentialsError}",
+                                text = stringResource(R.string.common_error_prefix, uiState.credentialsError!!),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -185,7 +187,7 @@ fun ProfileScreen(
 
                         uiState.cloudCredentials == null -> {
                             Text(
-                                text = "No credentials saved",
+                                text = stringResource(R.string.profile_no_credentials),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -193,7 +195,7 @@ fun ProfileScreen(
                         else -> {
                             val credentials = uiState.cloudCredentials
                             Text(
-                                text = "Encrypted QR code",
+                                text = stringResource(R.string.profile_encrypted_qr),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -205,18 +207,18 @@ fun ProfileScreen(
                             OutlinedButton(
                                 onClick = {
                                     copyToClipboard(
-                                        "Encrypted QR code",
+                                        context.getString(R.string.profile_encrypted_qr),
                                         credentials?.qrEncrypted.orEmpty()
                                     )
                                 }
                             ) {
-                                Text("Copy QR Code")
+                                Text(stringResource(R.string.profile_copy_qr))
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "PIN",
+                                text = stringResource(R.string.profile_pin_label),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -228,12 +230,12 @@ fun ProfileScreen(
                             OutlinedButton(
                                 onClick = {
                                     copyToClipboard(
-                                        "PIN",
+                                        context.getString(R.string.profile_pin_label),
                                         credentials?.pin?.toString()?.padStart(6, '0').orEmpty()
                                     )
                                 }
                             ) {
-                                Text("Copy PIN")
+                                Text(stringResource(R.string.profile_copy_pin))
                             }
 
                         }
@@ -258,12 +260,12 @@ fun ProfileScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Current Plan",
+                                text = stringResource(R.string.profile_current_plan_title),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             if (!uiState.isLoadingPlan) {
                                 IconButton(onClick = { viewModel.refreshSubscriptionPlan() }) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.profile_refresh_cd))
                                 }
                             }
                         }
@@ -275,13 +277,13 @@ fun ProfileScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     CircularProgressIndicator(modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Loading plan...")
+                                    Text(stringResource(R.string.profile_loading_plan))
                                 }
                             }
 
                             uiState.planError != null -> {
                                 Text(
-                                    text = "Error: ${uiState.planError}",
+                                    text = stringResource(R.string.common_error_prefix, uiState.planError!!),
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -335,12 +337,12 @@ fun ProfileScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Clear Synced Photos",
+                            text = stringResource(R.string.profile_clear_photos_title),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Delete already synced photos from your device gallery to free up space.",
+                            text = stringResource(R.string.profile_clear_photos_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -362,25 +364,24 @@ fun ProfileScreen(
                             } else {
                                 Icon(
                                     Icons.Default.Delete,
-                                    contentDescription = "Delete"
+                                    contentDescription = stringResource(R.string.common_delete_cd)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
-                            Text(if (uiState.isDeletingSyncedPhotos) "Deleting..." else "Clear Synced Photos")
+                            Text(if (uiState.isDeletingSyncedPhotos) stringResource(R.string.profile_deleting) else stringResource(R.string.profile_clear_synced_photos))
                         }
 
-                        // Show success or error message
                         uiState.deletedPhotosCount?.let { count ->
                             Spacer(modifier = Modifier.height(8.dp))
                             if (count > 0) {
                                 Text(
-                                    text = "Successfully deleted $count photo(s)",
+                                    text = stringResource(R.string.profile_delete_success, count),
                                     color = MaterialTheme.colorScheme.primary,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             } else {
                                 Text(
-                                    text = "No synced photos to delete",
+                                    text = stringResource(R.string.profile_no_synced_photos),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -390,7 +391,7 @@ fun ProfileScreen(
                         uiState.deleteError?.let { error ->
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Error: $error",
+                                text = stringResource(R.string.common_error_prefix, error),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -398,13 +399,12 @@ fun ProfileScreen(
                     }
                 }
 
-                // Confirmation Dialog
                 if (showDeleteConfirmDialog) {
                     AlertDialog(
                         onDismissRequest = { showDeleteConfirmDialog = false },
-                        title = { Text("Delete Synced Photos?") },
+                        title = { Text(stringResource(R.string.profile_delete_photos_dialog_title)) },
                         text = {
-                            Text("This will permanently delete all synced photos from your device gallery. The photos will still be available in the cloud. This action cannot be undone.")
+                            Text(stringResource(R.string.profile_delete_photos_dialog_body))
                         },
                         confirmButton = {
                             TextButton(
@@ -416,12 +416,12 @@ fun ProfileScreen(
                                     contentColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Text("Delete")
+                                Text(stringResource(R.string.profile_delete_button))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                                Text("Cancel")
+                                Text(stringResource(R.string.profile_cancel_button))
                             }
                         }
                     )
@@ -464,13 +464,13 @@ internal fun DangerZoneSection(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Danger Zone",
+                text = stringResource(R.string.profile_danger_zone_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.error
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Deleting your account is permanent and cannot be undone.",
+                text = stringResource(R.string.profile_danger_zone_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -493,11 +493,11 @@ internal fun DangerZoneSection(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Deleting Account...")
+                    Text(stringResource(R.string.profile_deleting_account))
                 } else {
                     Icon(Icons.Default.Delete, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete Account")
+                    Text(stringResource(R.string.profile_delete_account))
                 }
             }
 
@@ -508,11 +508,9 @@ internal fun DangerZoneSection(
                             showDeleteAccountConfirmDialog = false
                         }
                     },
-                    title = { Text("Delete Account?") },
+                    title = { Text(stringResource(R.string.profile_delete_account_dialog_title)) },
                     text = {
-                        Text(
-                            "This action is permanent. Your account and synced data will be removed from this device."
-                        )
+                        Text(stringResource(R.string.profile_delete_account_dialog_body))
                     },
                     confirmButton = {
                         TextButton(
@@ -525,7 +523,7 @@ internal fun DangerZoneSection(
                                 contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
-                            Text("Delete Permanently")
+                            Text(stringResource(R.string.profile_delete_permanently))
                         }
                     },
                     dismissButton = {
@@ -533,7 +531,7 @@ internal fun DangerZoneSection(
                             onClick = { showDeleteAccountConfirmDialog = false },
                             enabled = !isDeletingAccount
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.profile_cancel_button))
                         }
                     }
                 )
@@ -542,7 +540,7 @@ internal fun DangerZoneSection(
             deleteAccountError?.let { error ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Error: $error",
+                    text = stringResource(R.string.common_error_prefix, error),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -553,7 +551,7 @@ internal fun DangerZoneSection(
                 onClick = onLogoutClick,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Logout")
+                Text(stringResource(R.string.profile_logout))
             }
         }
     }

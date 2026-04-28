@@ -22,12 +22,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.graphenelab.photosync.R
 
 @Composable
 fun AuthScreen(
@@ -61,20 +63,20 @@ fun AuthScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Enter Your PIN",
+                    text = stringResource(R.string.auth_pin_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Enter the 6-digit PIN from the cloud.",
+                    text = stringResource(R.string.auth_pin_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (!isQrAvailable) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "No QR code provided. Please scan a QR code first.",
+                        text = stringResource(R.string.auth_no_qr),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
@@ -98,7 +100,7 @@ fun AuthScreen(
                         .height(50.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(text = "Continue", fontSize = 16.sp)
+                    Text(text = stringResource(R.string.auth_continue), fontSize = 16.sp)
                 }
             }
         }

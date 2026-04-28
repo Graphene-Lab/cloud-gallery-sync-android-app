@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Graphene Photos</string>
+
+    <!-- Login Screen -->
+    <string name="login_auth_in_progress">Autenticación en curso. Por favor, espere…</string>
+    <string name="login_title">Graphene Photos</string>
+    <string name="login_subtitle">Copia de seguridad en la nube privada. Las claves permanecen en tu teléfono.</string>
+    <string name="login_learn_more">Más información</string>
+    <string name="login_sign_in_email">Iniciar sesión con correo electrónico</string>
+    <string name="login_have_desktop">¿Ya tienes el cliente de escritorio?</string>
+    <string name="login_connect_qr">Conectar mediante código QR</string>
+    <string name="login_privacy_title">Cómo tus fotos permanecen privadas</string>
+    <string name="login_privacy_body">Las fotos se cifran en tu dispositivo antes de ser subidas. Tus claves de cifrado permanecen en tu teléfono y nunca se envían a nuestros servidores. Solo almacenamos archivos cifrados, por lo que no podemos ver tus fotos, a diferencia de servicios como Google Fotos o OneDrive.</string>
+    <string name="login_error_title">¡Vaya! Algo salió mal</string>
+    <string name="login_try_again">Intentar de nuevo</string>
+
+    <!-- Sync Screen -->
+    <string name="sync_title">Sincronización de galería</string>
+    <string name="sync_profile_cd">Perfil</string>
+    <string name="sync_status_label">Estado:</string>
+    <string name="sync_success">Sincronización exitosa, %1$d fotos subidas</string>
+    <string name="sync_no_photos">No hay fotos que sincronizar. Todo está actualizado.</string>
+    <string name="sync_ready">Listo para sincronizar</string>
+    <string name="sync_in_progress">Sincronización en curso</string>
+    <string name="sync_uploaded_photos">Fotos subidas:</string>
+    <string name="sync_failed_photos">Fotos fallidas:</string>
+    <string name="sync_discovered_photos">Fotos descubiertas:</string>
+    <string name="sync_progress_info">Información de progreso:</string>
+    <string name="sync_progress_waiting">esperando…</string>
+    <string name="sync_auto_label">Sincronizar nuevas fotos automáticamente</string>
+    <string name="sync_auto_subtitle">Se ejecuta periódicamente en segundo plano</string>
+    <string name="sync_manual_title">Análisis completo manual</string>
+    <string name="sync_manual_subtitle">Encuentra y sube fotos que se perdieron en el pasado.</string>
+    <string name="sync_stop_full_scan">Detener análisis completo</string>
+    <string name="sync_start_full_scan">Iniciar análisis completo</string>
+    <string name="sync_open_explorer">Abrir Explorador</string>
+    <string name="sync_download_explorer">Descargar Explorador</string>
+    <string name="sync_permission_denied">Denegaste los permisos. Por favor, ve a la configuración para concederlos.</string>
+
+    <!-- QR Scanner Screen -->
+    <string name="scan_connect_title">Conectar a tu nube</string>
+    <string name="scan_step1">1. Abre el cliente de escritorio y navega al panel de código QR</string>
+    <string name="scan_step2">2. Escanea el código QR de abajo con tu cámara</string>
+    <string name="scan_step3">3. Ingresa el PIN desde tu aplicación de autenticación</string>
+    <string name="scan_qr_sample_cd">Código QR de muestra</string>
+    <string name="scan_button">Escanear código QR</string>
+    <string name="scan_permission_denied">Permiso de cámara denegado. Por favor, concede acceso a la cámara e inténtalo de nuevo.</string>
+    <string name="scan_result_prefix">Escaneado: %1$s</string>
+    <string name="scan_result_nothing">Nada</string>
+
+    <!-- Auth (PIN) Screen -->
+    <string name="auth_pin_title">Ingresa tu PIN</string>
+    <string name="auth_pin_subtitle">Introduce el PIN de 6 dígitos de la nube.</string>
+    <string name="auth_no_qr">No se proporcionó código QR. Por favor, escanea primero un código QR.</string>
+    <string name="auth_continue">Continuar</string>
+
+    <!-- Auth Zero-Knowledge Screen -->
+    <string name="auth_zk_title">Zero-Knowledge</string>
+    <string name="auth_zk_question">¿Esta cuenta fue creada con Zero-Knowledge Encryption habilitado?</string>
+    <string name="auth_zk_yes">Sí</string>
+    <string name="auth_zk_no">No</string>
+    <string name="auth_zk_passphrase_label">Zero-Knowledge Passphrase</string>
+    <string name="auth_zk_passphrase_placeholder">Introduce la frase existente de 12 o 24 palabras</string>
+    <string name="auth_zk_passphrase_support">Ingresar una frase incorrecta provocará un fallo de autenticación. Asegúrate de ingresar la frase exacta utilizada durante la creación de la cuenta.</string>
+    <string name="auth_zk_authenticate">Autenticar</string>
+
+    <!-- OAuth Zero-Knowledge Setup Screen -->
+    <string name="oauth_zk_setup_title">Zero-Knowledge Setup</string>
+    <string name="oauth_zk_setup_subtitle">Finaliza el emparejamiento de tu cuenta habilitando Zero-Knowledge Encryption.</string>
+    <string name="oauth_zk_security_cd">Detalles de seguridad</string>
+    <string name="oauth_zk_how_works_title">How Zero-Knowledge Works</string>
+    <string name="oauth_zk_how_works_body">Tus archivos se cifran localmente en tu dispositivo antes de enviarse a nuestros servidores, garantizando que solo tú puedes acceder a tus datos; nuestros servidores nunca los ven.\n\nTu frase de contraseña deriva una clave maestra. A partir de esa clave maestra, la aplicación deriva una clave de cifrado única para cada archivo usando el nombre del archivo y la marca de tiempo. Esto significa que los archivos no se cifran con una única clave estática, lo que proporciona un aislamiento más sólido.</string>
+    <string name="oauth_zk_first_signin">Es mi primer inicio de sesión</string>
+    <string name="oauth_zk_choose_passphrase">Elige cómo configurar la frase de contraseña:</string>
+    <string name="oauth_zk_generated_passphrase_label">Frase de contraseña generada (24 palabras):</string>
+    <string name="oauth_zk_regenerate_cd">Regenerar frase de contraseña</string>
+    <string name="oauth_zk_copy_passphrase_cd">Copiar frase de contraseña</string>
+    <string name="oauth_zk_passphrase_copied">Frase de contraseña copiada</string>
+    <string name="oauth_zk_save_passphrase_warning">Importante: guarda esta frase de contraseña en un lugar seguro.</string>
+    <string name="oauth_zk_warning_cd">Detalles de advertencia de la frase de contraseña</string>
+    <string name="oauth_zk_passphrase_warning_title">Advertencia de frase de contraseña</string>
+    <string name="oauth_zk_passphrase_warning_body">No pierdas esta frase de contraseña. Guárdala en un lugar seguro. Si la pierdes, puedes perder el acceso a tus archivos cifrados. Esta frase de contraseña no se almacena en nuestros servidores.</string>
+    <string name="oauth_zk_own_passphrase_label">Tu frase de contraseña</string>
+    <string name="oauth_zk_own_passphrase_placeholder">Introduce una frase de contraseña de 12 o 24 palabras</string>
+    <string name="oauth_zk_skip_warning">El cifrado se desactivará para esta sesión. Esto no es recomendable.</string>
+    <string name="oauth_zk_existing_question">¿Esta cuenta fue creada originalmente con Zero-Knowledge Encryption habilitado?</string>
+    <string name="oauth_zk_existing_passphrase_label">Frase de contraseña existente</string>
+    <string name="oauth_zk_existing_passphrase_placeholder">Introduce la misma frase de contraseña usada al crear la cuenta</string>
+    <string name="oauth_zk_cancel">Cancelar</string>
+    <string name="oauth_zk_continue">Continuar</string>
+    <string name="oauth_zk_pairing_failed">Error de emparejamiento</string>
+    <string name="oauth_zk_choice_generate">Generar</string>
+    <string name="oauth_zk_choice_use_mine">Usar la mía</string>
+    <string name="oauth_zk_choice_skip">Omitir (No recomendado)</string>
+
+    <!-- Mnemonic Screen -->
+    <string name="mnemonic_secure_title">Asegura tu cuenta</string>
+    <string name="mnemonic_secure_subtitle">Configura el cifrado del lado del cliente para proteger tus datos</string>
+    <string name="mnemonic_generate_new">Generar nueva frase de contraseña</string>
+    <string name="mnemonic_recover_existing">Recuperar desde una existente</string>
+    <string name="mnemonic_skip">Omitir (No recomendado)</string>
+    <string name="mnemonic_choose_length_title">Elige la longitud de la frase de contraseña</string>
+    <string name="mnemonic_warning_text_pre">Esta frase de contraseña es tu </string>
+    <string name="mnemonic_warning_only">única</string>
+    <string name="mnemonic_warning_text_post"> forma de recuperar tus datos. Escríbela y mantenla segura sin conexión. NO la compartas.</string>
+    <string name="mnemonic_generate_12">Generar frase de 12 palabras</string>
+    <string name="mnemonic_generate_24">Generar frase de 24 palabras</string>
+    <string name="mnemonic_recover_title">Recuperar tu cuenta</string>
+    <string name="mnemonic_recover_subtitle">Introduce tu frase de recuperación de 12 o 24 palabras:</string>
+    <string name="mnemonic_recovery_passphrase_label">Frase de recuperación</string>
+    <string name="mnemonic_recovering">Recuperando…</string>
+    <string name="mnemonic_recover_button">Recuperar cuenta</string>
+    <string name="mnemonic_display_title">Tu frase de recuperación</string>
+    <string name="mnemonic_copy_passphrase">Copiar frase</string>
+    <string name="mnemonic_passphrase_copied">¡Frase de recuperación copiada al portapapeles!</string>
+    <string name="mnemonic_i_saved">He guardado mi frase, Continuar</string>
+    <string name="mnemonic_back_cd">Atrás</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">Información de la cuenta</string>
+    <string name="profile_back_cd">Atrás</string>
+    <string name="profile_email_label">Correo electrónico</string>
+    <string name="profile_loading">Cargando…</string>
+    <string name="profile_cloud_credentials_title">Credenciales de nube</string>
+    <string name="profile_loading_credentials">Cargando credenciales…</string>
+    <string name="profile_no_credentials">No hay credenciales guardadas</string>
+    <string name="profile_encrypted_qr">Código QR cifrado</string>
+    <string name="profile_copy_qr">Copiar código QR</string>
+    <string name="profile_pin_label">PIN</string>
+    <string name="profile_copy_pin">Copiar PIN</string>
+    <string name="profile_current_plan_title">Plan actual</string>
+    <string name="profile_refresh_cd">Actualizar</string>
+    <string name="profile_loading_plan">Cargando plan…</string>
+    <string name="profile_clear_photos_title">Limpiar fotos sincronizadas</string>
+    <string name="profile_clear_photos_subtitle">Elimina las fotos ya sincronizadas de la galería de tu dispositivo para liberar espacio.</string>
+    <string name="profile_deleting">Eliminando…</string>
+    <string name="profile_clear_synced_photos">Limpiar fotos sincronizadas</string>
+    <string name="profile_delete_success">Se eliminaron %1$d foto(s) correctamente</string>
+    <string name="profile_no_synced_photos">No hay fotos sincronizadas para eliminar</string>
+    <string name="profile_delete_photos_dialog_title">¿Eliminar fotos sincronizadas?</string>
+    <string name="profile_delete_photos_dialog_body">Esto eliminará permanentemente todas las fotos sincronizadas de la galería de tu dispositivo. Las fotos seguirán disponibles en la nube. Esta acción no se puede deshacer.</string>
+    <string name="profile_delete_button">Eliminar</string>
+    <string name="profile_cancel_button">Cancelar</string>
+    <string name="profile_danger_zone_title">Zona de peligro</string>
+    <string name="profile_danger_zone_subtitle">Eliminar tu cuenta es permanente y no se puede deshacer.</string>
+    <string name="profile_deleting_account">Eliminando cuenta…</string>
+    <string name="profile_delete_account">Eliminar cuenta</string>
+    <string name="profile_delete_account_dialog_title">¿Eliminar cuenta?</string>
+    <string name="profile_delete_account_dialog_body">Esta acción es permanente. Tu cuenta y los datos sincronizados serán eliminados de este dispositivo.</string>
+    <string name="profile_delete_permanently">Eliminar permanentemente</string>
+    <string name="profile_logout">Cerrar sesión</string>
+    <string name="profile_copied_clipboard">¡%1$s copiado al portapapeles!</string>
+
+    <!-- Common -->
+    <string name="common_ok">Aceptar</string>
+    <string name="common_error_prefix">Error: %1$s</string>
+    <string name="common_delete_cd">Eliminar</string>
+</resources>

@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,27 +82,27 @@ private fun ScanContent(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Connect to Your Cloud",
+                text = stringResource(R.string.scan_connect_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "1. Open your desktop client and navigate to the QR code panel",
+                text = stringResource(R.string.scan_step1),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "2. Scan the QR code below using your camera",
+                text = stringResource(R.string.scan_step2),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "3. Enter the PIN from your authentication app",
+                text = stringResource(R.string.scan_step3),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
@@ -112,7 +113,7 @@ private fun ScanContent(
             val sampleShape = RoundedCornerShape(10.dp)
             Image(
                 painter = painterResource(id = R.drawable.windows_client_qr_sample),
-                contentDescription = "Sample QR code",
+                contentDescription = stringResource(R.string.scan_qr_sample_cd),
                 contentScale = ContentScale.FillBounds, // This forces the image to hit the corners
                 modifier = Modifier
                     .size(280.dp)
@@ -133,14 +134,14 @@ private fun ScanContent(
 @Composable
 private fun ScanButton(onClick: () -> Unit) {
     Button(onClick = onClick) {
-        Text("Scan QR Code")
+        Text(stringResource(R.string.scan_button))
     }
 }
 
 @Composable
 private fun PermissionDeniedMessage() {
     Text(
-        text = "Camera permission denied. Please grant camera access and try again.",
+        text = stringResource(R.string.scan_permission_denied),
         modifier = Modifier.padding(top = 16.dp),
         textAlign = TextAlign.Center
     )
@@ -149,7 +150,7 @@ private fun PermissionDeniedMessage() {
 @Composable
 private fun ScannedContent(content: String?) {
     Text(
-        text = "Scanned: ${content ?: "Nothing"}",
+        text = stringResource(R.string.scan_result_prefix, content ?: stringResource(R.string.scan_result_nothing)),
         modifier = Modifier.padding(top = 16.dp),
         textAlign = TextAlign.Center
     )
