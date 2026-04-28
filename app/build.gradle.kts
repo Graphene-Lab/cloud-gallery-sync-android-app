@@ -71,6 +71,9 @@ android {
         }
         release {
             isMinifyEnabled = false
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
